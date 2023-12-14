@@ -1,0 +1,13 @@
+name: html_regout
+
+descr: |
+  Custom regression output
+  for regression chunks
+
+fields:
+  chunkid:
+    type: int
+
+  regout:
+    descr: |
+      HTML code with approbriate tags for numbers

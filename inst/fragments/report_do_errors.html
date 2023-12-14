@@ -1,0 +1,12 @@
+<h4>Investigating, correcting and replying to errors</h4>
+
+<p>Please take a closer look at the do files where the columns <i>Error</i> or <i>No data</i> show a positive number. This is the number of Stata commands that have thrown an error. The column <i>No data</i> refers to errors that occurred in commands where previously a data set was not found, while the <i>Error</i> column refers to errors in commands where no data set was missing.</p>
+
+<p>To investigate the errors, please click on the name of the corresponding code file in the first column. You will then see another HTML page that shows an interactive log file of your do code. Lines that throw errors have a grey background. You can press on the blue rectangle to the right of a code line to show the output of a command.</p>
+
+<p>Please correct errors if possible. Afterward, upload a corrected version of your supplement and let Repbox analyse it again.</p>
+
+<p>Some errors might be due to the fact that Repbox uses a different version of an external Stata module than you use in your analysis. For example, newer <a href="http://repec.org/bocode/o/outreg2.html">outreg2</a> versions, may not be compatible with code written for older versions. If you encounter such errors, please, directly add the ado files of the Stata modules that you used to your code supplement. Even if you do not encounter such errors, adding the ado files of the used Stata modules would generally be a good idea to improve reproducability of your supplement.</p>
+
+<p>Some errors cannot be corrected. For example, the code may not run correctly because it requires confidential data that you cannot upload for the analysis to the Repbox app. Some errors may also be due to Repbox itself. To analyse your code, we augment the Stata code. In some cases, this code injection can induce errors. If such errors remain, please just briefly note it in your reply to the data editor.</p>
+

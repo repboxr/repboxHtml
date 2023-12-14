@@ -1,0 +1,512 @@
+example = function() {
+  library(repbox)
+  # New table parsing
+  project.dir = "~/statabox/supp/aer_vol_106_issue_5_article_43"
+
+  # A project from RTutor
+  project.dir = "~/statabox/supp/aer_vol_101_issue_5_article_17"
+  # A project classified by Star Wars paper
+  project.dir = "~/statabox/supp/aer_vol_101_issue_5_article_4"
+
+  # A lot of almost matches
+  # t-value in parenthesis
+  project.dir = "/home/rstudio/statabox/supp/aer_vol_95_issue_4_article_2"
+
+  # Path correction: deal correctly with quotes
+  project.dir = "/home/rstudio/statabox/supp/aer_vol_108_issue_10_article_4"
+
+  # Table 1 Panel (C) not yet well parsed.
+  # Problem: Need to replace "," by "" when detecting
+  # numbers
+  project.dir = "/home/rstudio/statabox/supp/aer_vol_108_issue_10_article_4"
+
+
+  project.dir = "/home/rstudio/statabox/supp/testsupp"
+
+  # Has errors which essentially are also missing data
+  project.dir = "/home/rstudio/statabox/supp/aejapp_12_4_4"
+  # Average matches
+  project.dir = "/home/rstudio/statabox/supp/aejpol_vol_7_issue_2_article_6"
+  # Good matches
+  project.dir = "/home/rstudio/statabox/supp/aejapp_vol_6_issue_3_article_7"
+
+
+  project.dir = "/home/rstudio/statabox/supp/aejapp_vol_4_issue_2_article_9"
+
+  # An RTutor Problem Set
+  # A main do file that runs other do files
+  project.dir = "/home/rstudio/statabox/supp/restud_88_1_8"
+
+
+  project.dir = "~/repbox/projects/aejapp_vol_6_issue_3_article_7"
+  project.dir = "~/repbox/projects/myproject"
+  project.dir = "~/repbox/projects/testsupp"
+  project.dir = "/home/rstudio/repbox/projects_ejd/aer_111_11_4"
+  #update.repbox.project(project.dir, timeout=120, force=TRUE)
+
+  repbox.make.www(project.dir, just.overview=FALSE, overwrite.shared = TRUE, for.rstudio=TRUE)
+
+  repbox.make.www(project.dir, just.overview=!TRUE, overwrite.shared = TRUE)
+
+  repbox.make.standalone.www(project.dir)
+
+
+  rstudioapi::filesPaneNavigate(paste0(project.dir,"/repbox/www_rstudio"))
+  rstudioapi::filesPaneNavigate("~/repbox/repbox/R")
+}
+
+repbox.make.www = function(project.dir, just.overview=FALSE, overwrite.shared=FALSE, show.figure=FALSE, show.unknown=TRUE, for.rstudio=FALSE,  su = readRDS.or.null(paste0(project.dir,"/repbox/stata/repbox_results.Rds")), ma = readRDS.or.null(paste0(project.dir,"/repbox/matched_tabs.Rds"))
+) {
+  restore.point("repbox.make.www")
+
+  project = basename(project.dir)
+  # Need to adapt
+  if (for.rstudio) {
+    if (startsWith(project.dir,"~")) {
+      base = substring(project.dir,3)
+    } else {
+      base = str.right.of(project.dir,"/home/") %>% str.right.of("/")
+    }
+    #prefix = paste0("/files/repbox/projects/", basename(project.dir),"/repbox/www/")
+    prefix = paste0("/files/repbox/projects/", basename(project.dir),"/repbox/www_rstudio/")
+    prefix = paste0("/files/",base,"/repbox/www_rstudio/")
+    options(repbox.url.prefix = prefix)
+    www.dir = paste0(project.dir,"/repbox/www_rstudio")
+  } else {
+    prefix = paste0("")
+    options(repbox.url.prefix = prefix)
+    www.dir = paste0(project.dir,"/repbox/www")
+  }
+
+
+  repbox.copy.shared.www(project.dir,www.dir = www.dir,  overwrite = overwrite.shared)
+
+  try(make.data.code.network.html(project.dir, www.dir))
+
+  head = repbox.www.head()
+
+
+  # overview
+  body = as.character(fluidPage(HTML(project.overview.html(project.dir))))
+  html = paste0("<html><title>",basename(project.dir),"</title>\n",head,"<body>",body, "</body></html>")
+  writeLines(html,paste0(www.dir,"/overview.html"))
+  if (just.overview) return()
+
+  # do pages
+  do.tabs.html = HTML(project.do.tabs.html(project.dir,ma = ma,su = su))
+  ui = fluidPage(
+    do.tabs.html,
+    tags$script(src="do_bottom.js")
+  )
+  body = as.character(ui) %>% merge.lines()
+  html = paste0("<html><title>Do files: ",basename(project.dir),"</title>\n",head,"<body>",body, "</body></html>")
+  writeLines(html,paste0(www.dir,"/do.html"))
+
+  # tab pages
+  tab.tabs.html = HTML(project.tab.tabs.html(project.dir,ma = ma,su=su, show.figure = show.figure, show.unknown = show.unknown))
+  # do pages
+  ui = fluidPage(
+    tab.tabs.html,
+    tags$script(src="tabs_bottom.js"),
+    tags$script(src="link_menu.js")
+  )
+  body = as.character(ui) %>% merge.lines()
+  html = paste0("<html><title>Regression tables: ",basename(project.dir),"</title>\n",head,"<body>",body, "</body></html>")
+  writeLines(html,paste0(www.dir,"/tabs.html"))
+
+  # Combined page
+  num.search.html = num.search.html(su, ma)
+
+  ui = fluidPage(
+    div(class="row",style="height: 100vh;",
+      div(id="do-col-div", class="col-sm-7", style="overflow-y: scroll; height:100%; padding: 5px",do.tabs.html),
+      div(id="tabs-col-div",class="col-sm-5", style="overflow-y: scroll; height:100%; padding: 5px", tab.tabs.html)
+    ),
+    tags$script(src="do_and_tabs.js"),
+    tags$script(src="link_menu.js"),
+    HTML(num.search.html),
+    tags$script(src="number_marker.js")
+  )
+  body = as.character(ui) %>% merge.lines()
+  html = paste0("<html><title>Tables and Do: ",basename(project.dir),"</title>\n",head,"<body>",body, "</body></html>")
+  writeLines(html,paste0(www.dir,"/do_and_tabs.html"))
+
+  project.output.report.html(project.dir,www.dir = www.dir, su=su,standalone = FALSE)
+}
+
+repbox.make.standalone.www = function(project.dir, just.overview=FALSE) {
+  restore.point("repbox.make.standalone.www")
+  options(repbox.url.prefix = "")
+  project = basename(project.dir)
+
+  www.dir = paste0(project.dir,"/repbox/www_alone")
+  if (!dir.exists(www.dir)) dir.create(www.dir)
+
+  su = readRDS.or.null(paste0(project.dir,"/repbox/stata/repbox_results.Rds"))
+  ma = readRDS.or.null(paste0(project.dir,"/repbox/matched_tabs.Rds"))
+
+  head = repbox.www.head.standalone()
+  do.tabs.html.inline = HTML(project.do.tabs.html(project.dir,inline=TRUE,ma = ma, su=su))
+  dir = system.file("www", package="repboxMain")
+  ui = fluidPage(
+    do.tabs.html.inline,
+    includeScript(file.path(dir,"do_bottom.js"))
+  )
+  body = as.character(ui) %>% merge.lines()
+  html = paste0("<html><title>Do files: ",basename(project.dir),"</title>\n","<body>",head, body, "</body></html>")
+  writeLines(html,paste0(www.dir,"/do_",project,".html"))
+
+  project.output.report.html(project.dir,su=su,standalone = TRUE)
+
+
+  # # Combined page all included
+  # ui = fluidPage(
+  #   div(class="row",style="height: 100vh;",
+  #       div(id="do-col-div", class="col-sm-7", style="overflow-y: scroll; height:100%; padding: 5px",do.tabs.html),
+  #       div(id="tabs-col-div",class="col-sm-5", style="overflow-y: scroll; height:100%; padding: 5px", tab.tabs.html)
+  #   ),
+  #   includeScript(file.path(dir,"do_and_tabs.js")),
+  #   includeScript(file.path(dir,"link_menu.js")),
+  #   HTML(num.search.html),
+  #   includeScript(file.path(dir,"number_marker.js"))
+  # )
+  # body = as.character(ui) %>% merge.lines()
+  # html = paste0("<html><title>Tables and Do: ",basename(project.dir),"</title>\n",head.inline,"<body>",body, "</body></html>")
+  # writeLines(html,paste0(www.dir,"/do_and_tabs_",project,".html"))
+
+
+}
+
+
+repbox.copy.shared.www = function(project.dir, www.dir, overwrite=FALSE) {
+  # Copy shared
+  if (!dir.exists(www.dir)) dir.create(www.dir)
+  pkg.www = system.file("www", package="repboxMain")
+  files = list.files(pkg.www,include.dirs = TRUE,recursive = FALSE, full.names=TRUE)
+  file.copy(files, www.dir,recursive = TRUE,overwrite = overwrite)
+}
+
+
+
+repbox.www.head = function(path.prefix = "") {
+  paste0('
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<script src="',path.prefix,'shared/jquery.min.js"></script>
+<link href="',path.prefix,'shared/bootstrap.min.css" rel="stylesheet"/>
+<link href="',path.prefix,'shared/bootstrap-accessibility.min.css" rel="stylesheet" />
+<script src="',path.prefix,'shared/bootstrap.min.js"></script>
+<script src="',path.prefix,'shared/bootstrap-accessibility.min.js"></script>
+<link href="',path.prefix,'repbox.css" rel="stylesheet"/>
+<link href="',path.prefix,'link-menu.css" rel="stylesheet"/>
+</head>
+  ')
+}
+
+repbox.www.head.standalone = function() {
+  dir = system.file("www", package="repboxMain")
+  HTML(paste0(
+    includeScript(file.path(dir,"shared/jquery.min.js")),
+    includeCSS(file.path(dir,"shared/bootstrap.min.css")),
+    includeScript(file.path(dir,"shared/bootstrap.min.js")),
+    includeCSS(file.path(dir,"repbox.css")),
+    includeCSS(file.path(dir,"link-menu.css"))
+  ))
+}
+
+
+project.overview.html = function(project.dir, add.local.pdf=TRUE, show.figure=FALSE, show.unknown=TRUE) {
+  restore.point("project.overview.html")
+  ma = readRDS.or.null(paste0(project.dir,"/repbox/matched_tabs.Rds"))
+  su = readRDS.or.null(paste0(project.dir,"/repbox/stata/repbox_results.Rds"))
+
+  project = basename(project.dir)
+  dotab = su$dotab
+
+  html = paste0("<h3>Project ", project,"</h3>",
+'<p>This page gives an overview of the do files results, and extracted tables from the PDF. The following link provides more details.</p>
+<a href="', repbox.link("do_and_tabs.html"),'"><p>&#x1F517;Show do files and extracted tables side-by-side</p></a>
+<a href="', repbox.link("data_code_network.html"),'"><p>&#x1F517;Network graph of data and code</p></a>'
+  )
+  if (add.local.pdf) {
+    files = list.files(paste0(project.dir,"/pdf"),glob2rx("*.pdf"),ignore.case = TRUE,full.names = FALSE)
+    files = paste0("../../pdf/",files)
+    html = paste0(html,'<a href="',repbox.link(files),'"><p>&#x1F517;Show article PDF</p></a>')
+
+    files = list.files(paste0(project.dir,"/arttxt"),glob2rx("*.txt"),ignore.case = TRUE,full.names = FALSE)
+    if (length(files)>0) {
+      files = paste0("../../arttxt/",files)
+      html = paste0(html,'<a href="',repbox.link(files),'"><p>&#x1F517;Show article txt file</p></a>')
+    }
+
+  }
+
+  do.html = do.overview.html(project.dir, su, ma)
+  tab.html = tab.overview.html(project.dir,su, ma, show.figure=show.figure, show.unknown = show.unknown)
+
+  pdf.html = NULL
+
+  data.info = datasets.info.html(project.dir)
+  data.sets.html = data.info$html
+
+  html = paste0(html, do.html,  tab.html, data.sets.html,"<br><br><br>",'<link href="repbox_overview.css" rel="stylesheet"/>')
+  return(html)
+
+}
+
+do.overview.html = function(project.dir, su, ma) {
+  restore.point("do.overview.html")
+
+  sup.dir = file.path(project.dir,"mod")
+  # Do files overview
+  do.files = get.project.do.files(project.dir)
+  #do.files = list.files(sup.dir,glob2rx("*.do"),full.names = TRUE,recursive = TRUE)
+  #do.files = do.files[!startsWith(basename(do.files),"repbox_")]
+
+  do.df = tibble(file = do.files, doid = tools::file_path_sans_ext(basename(do.files)))
+
+
+
+  h = "<h4>Summary of do file analysis</h4>\n"
+  if (NROW(do.df)==0) {
+    h = paste0(h,"<p>The project has no do files.<p>")
+    return(h)
+  }
+
+  dotab = su$dotab
+  if (is.null(dotab)) {
+    tab.html = repbox_html_table(id="do-overview-tab",
+      transmute(do.df, Do=paste0(doid,".do"), Analyzed="NO")
+    )
+    h = paste0(h, tab.html)
+    return(h)
+  }
+
+
+
+  do.df = left_join(select(do.df, doid),dotab, by="doid")
+  do.df$analyzed = !is.na(do.df$dofile)
+  do.df = arrange(do.df, desc(analyzed), desc(!is.na(runtime)))
+
+  run.df = su$run.df
+
+  runs.df = run.df %>%
+    group_by(donum) %>%
+    summarize(
+      runs = n(),
+      runs.with.data = sum(has.data),
+      runs.no.data = sum(!has.data),
+      runs.err = sum(runerr),
+      runs.err.with.data = sum(has.data & runerr)
+    )
+
+  reg.df = filter(run.df, is.regcmd)
+  mdf = ma$mdf
+  if (!is.null(mdf)) {
+    mdf.has = mdf %>%
+      group_by(donum, line, counter) %>%
+      summarize(matched = TRUE)
+
+    reg.df = reg.df %>%
+      left_join(mdf.has, by = c("donum","line","counter")) %>%
+      mutate(matched = na.val(matched, FALSE))
+
+  } else {
+    reg.df$matched = rep(FALSE, NROW(reg.df))
+  }
+
+  regruns.df = reg.df %>%
+    group_by(donum) %>%
+    summarize(
+      rruns = n(),
+      rruns.with.data = sum(has.data),
+      rruns.no.data = sum(!has.data),
+      rruns.err = sum(runerr),
+      rruns.err.with.data = sum(has.data & runerr),
+      matched = sum(matched)
+    )
+
+  tab = su$tab
+
+  if (!is.null(su$regtab)) {
+    norunregs = su$regtab %>%
+      anti_join(run.df, by=c("donum","line")) %>%
+      group_by(donum) %>%
+      summarize(norun.reg.lines = n())
+  } else {
+    norunregs = su$tab %>%
+      filter(is.regcmd) %>%
+      group_by(donum) %>%
+      summarize(norun.reg.lines = sum(errruns + runs == 0))
+  }
+
+  do.df = do.df %>%
+    left_join(runs.df, by="donum") %>%
+    left_join(regruns.df, by="donum") %>%
+    left_join(norunregs, by="donum")
+
+
+  if (!has.col(do.df,"is.included"))
+    do.df$is.included = FALSE
+
+  do.df = do.df %>% mutate(
+      info = case_when(
+        is.true(parse.err) & is.true(timeout) ~ "timeout",
+        is.true(parse.err) ~ "parsing error",
+        is.true(timeout) ~ "timeout",
+        TRUE ~ ""
+      )) %>%
+      mutate(
+        info = paste0(case_when(
+          !analyzed~"not analyzed",
+          is.included~"called in other do",
+          is.na(runtime) & is.true(timeout) ~ "not run, global ",
+          is.na(runtime) ~ "just parsed ",
+          TRUE ~ ""
+        ), info)
+      )
+
+  if (NROW(do.df)>1) {
+    total = lapply(do.df, function(val) {
+      if (is.numeric(val)) return(sum(val, na.rm=TRUE))
+      return(NA)
+    }) %>% as_tibble()
+    total$analyzed = FALSE
+    total$do.file = "TOTAL"
+    total$info = ""
+    do.df = bind_rows(total, do.df)
+    do.df$is.total = c(TRUE, rep(FALSE,NROW(do.df)-1))
+  } else {
+    do.df$is.total = logical(NROW(do.df))
+  }
+
+  format.share = function(x) {
+    x = ifelse(is.finite(x),
+      paste0(round(100*x,1),"%"),
+      "-"
+    )
+    x
+  }
+
+   head.html = '
+<tr>
+  <th style="border: 0; padding-bottom: 0;"></th>
+  <th style="border: 0; padding-bottom: 0;">Runtime</th>
+  <th style="border: 0; padding-bottom: 0;" colspan="4" align="center">Regressions</th>
+  <th colspan="3" style="border: 0; padding-bottom: 0;">All commands</th>
+  <th style="border: 0; padding-bottom: 0;">Info</th>
+</tr><tr>
+  <th style="border: 0"></th>
+  <th style="border: 0">(sec.)</th>
+
+  <th style="border: 0">Runs</th>
+  <th style="border: 0">Matched</th>
+  <th style="border: 0">No data</th>
+  <th style="border: 0">Error</th>
+
+  <th style="border: 0">Runs</th>
+  <th style="border: 0">No data</th>
+  <th style="border: 0">Error</th>
+  <th style="border: 0"></th>
+
+</tr>
+  '
+  do.df = mutate(do.df, row.html = paste0(
+    '<tr', ifelse(is.total,' class="total-row"',""),'>','<td>',ifelse(analyzed,
+      paste0('<a href="',do.line.link(donum),'">',dofile,"</a>"),
+      do.file),'</td>',
+    '<td style="text-align: right;">',na.val(round(runtime),"-"),'</td>',
+
+    '<td style="text-align: right;">',na.val(rruns,"-"),'</td>',
+    '<td style="text-align: right;">',na.val(matched,"-"),'</td>',
+    '<td style="text-align: right;">',na.val(rruns.no.data,"-"),'</td>',
+    '<td style="text-align: right;">',na.val(rruns.err.with.data,"-"),'</td>',
+
+    '<td style="text-align: right;">',na.val(runs,"-"),'</td>',
+    '<td style="text-align: right;">',na.val(runs.no.data,"-"),'</td>',
+    '<td style="text-align: right;">',na.val(runs.err.with.data,"-"),'</td>',
+    '<td>',info,'</td>',
+    '</tr>'
+  ))
+  tbody = paste0(do.df$row.html, collapse="\n")
+
+  tab.html = paste0('\n<table id="do-overview-tab" class="table-mini table table-striped">
+  <thead>',head.html, "</thead><tbody>\n",tbody,"</tbody></table>")
+  h = paste0(h, tab.html)
+  return(h)
+
+}
+
+
+tab.overview.html = function(project.dir, su=NULL, ma=NULL, show.figure=FALSE, show.unknown=TRUE, show.reg=FALSE) {
+  restore.point("tab.overview.html")
+  adf = readRDS.or.null(paste0(project.dir, "/repbox/arttab.Rds"))
+
+  if (!show.figure & !is.null(adf)) {
+    adf = filter(adf, !startsWith(tabname,"Figure"))
+  }
+  if (!show.unknown & !is.null(adf)) {
+    adf = filter(adf, !startsWith(tabname,"Unknown"))
+  }
+
+  pdf.df = ma$pdf.df
+  h = "<h4>Extracted Tables from PDF</h4>"
+  if (is.null(adf)) {
+    h = paste0(h, "<p>No tables extracted from PDF.</p>")
+    files = list.files(paste0(project.dir,"/pdf"),glob2rx("*.pdf"),ignore.case = TRUE)
+    if (length(files)==0) {
+      h = paste0(h, "<p>Likely reason: no pdf file was copied to:<br>", paste0(project.dir,"/pdf"), "</p>")
+    }
+    return(h)
+  }
+
+  df = adf %>%
+    mutate(
+      tablink = paste0('<a href="', arttab.link(tabid),'">',tpname,'</a>')
+    )
+
+  # Match general numbers
+  if (!is.null(ma$num.match.agg)) {
+    df = left_join(df, select(ma$num.match.agg,-tpname), by="tabid") %>%
+      left_join(select(su$dotab,donum,doid), by="donum") %>%
+      mutate(
+        do.str = paste0('<a href="', do.line.link(donum),'&tabid=',tabid,'">',doid,'.do</a>'),
+        num.count.str = tab.num.count,
+        do.match.str = paste0(round(match.share*100),"%"),
+        glob.match.str = paste0(round(glob.match.share*100),"%")
+      )
+  } else {
+    df$do.str = ""
+    df$do.match.str = ""
+    df$num.count.str = ""
+    df$match.share = ""
+    df$glob.match.share = ""
+    df$glob.match.str = ""
+  }
+
+
+  head.html = paste0('
+<tr>
+  <th>Table</th>
+  <th>Numbers</th>
+  <th>Best matching do</th>
+  <th>Matches</th>
+  <th>Matches (all do)</th>
+</tr>')
+  df = df %>% mutate(row.html = paste0(
+    '<tr>',
+    '<td>',tablink,'</td>',
+    '<td style="text-align: right">',num.count.str,'</td>',
+    '<td>',do.str,'</td>',
+    '<td style="text-align: right">',do.match.str,'</td>',
+    '<td style="text-align: right">',glob.match.str,'</td>',
+    '</tr>')
+  )
+
+  tbody = paste0(df$row.html, collapse="\n")
+
+  tab.html = paste0('\n<table class="table-mini table table-striped">
+  <thead>',head.html, "</thead><tbody>\n",tbody,"</tbody></table>")
+  h = paste0(h, tab.html)
+  return(h)
+}

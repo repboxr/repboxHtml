@@ -1,0 +1,18 @@
+name: html_do_coef_num
+
+descr: |
+  Will be separated into 4 parcels:
+  html_coef_num, html_se_num, html_t_num, html_p_num, html_reg_stat_num
+
+fields:
+  num:
+    type: num
+
+  chunkid:
+    descr: |
+      A global index for the output chunk counted over the complete
+      project and all log outputs for which numbers are matched
+      (there might be several per line).
+      Will directly describe the row in html_do_chunk starting
+      with 1.
+    type: int

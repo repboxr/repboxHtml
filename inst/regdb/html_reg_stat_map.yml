@@ -1,0 +1,25 @@
+name: html_reg_stat_map
+
+descr:
+
+fields:
+  stat_name:
+
+  # only fields below will be stored in HTML
+
+  regid:
+    type: int
+
+  chunkid:
+    type: int
+
+  reg_num_type:
+    descr: |
+      What sort of number does the cell display. Currently
+      only specified for numbers from a regression.
+    type: int
+
+    val_descr:
+      10: General regression stat
+      11: Regression nobs
+      12: Regression r2

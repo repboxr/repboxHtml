@@ -1,0 +1,8 @@
+name: html_do_se_num
+
+fields:
+  num:
+    type: num
+
+  chunkid:
+    type: int

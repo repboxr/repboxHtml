@@ -1,0 +1,239 @@
+example = function() {
+  library(repboxHtml)
+  project.dir = "~/repbox/projects_reg/aejapp_3_2_2"
+  html_reg_tab(project.dir)
+}
+
+html_reg_tab = function(project.dir, parcels=NULL) {
+  restore.point("html_reg_tab")
+  parcels = regdb_load_parcels(project.dir, c("art_reg",  "map_reg","art_tab","art_tab_cell"), parcels)
+
+  areg_df = parcels$art_reg$art_reg
+  acoef_df = parcels$art_reg$art_regcoef
+  astat_df = parcels$art_reg$art_regstat
+  map_df = parcels$map_reg$map_reg
+
+
+
+  dat = tab$reg.df[[1]]
+  if (is.null(ma$pdf.df)) {
+    dat$col.num.coef = NA
+    dat$col.best.num.match = NA
+    dat$col.best.num.match = NA
+  } else {
+    dat = left_join(dat, select(ma$pdf.df, tabid, col, row, col.num.coef, col.best.num.match, col.best.share.match), by=c("tabid","col","row"))
+  }
+  tab$reg.df[[1]] = dat
+
+  main.html = tab.reg.main.html(tab, ma)
+
+  source.html = source.tab.html(tab,ma)
+
+
+  # No match
+  tabid = tab$tabid
+  if (is.null(ma$col.mdf)) {
+    html = repboxTabSetPanel(
+      id=paste0("tab_subtabs",tabid),
+      tabnames = c("Main", "Source"),
+      tabids = c(paste0("tabmain",tabid),paste0("tabsource",tabid) ),
+      contents = list(main.html, source.html)
+    )
+    return(html)
+
+  }
+
+
+  col.mdf = ma$col.mdf
+  .tabid = tabid
+  cols = unique(filter(col.mdf, tabid==.tabid, col.share.match >= min.col.share)$col)
+
+  cols.html = lapply(cols, function(col) {
+    tab.col.matched.html(tab, col,su=su,ma=ma)
+  })
+
+
+  html = repboxTabSetPanel(id=paste0("tab_subtabs",tabid),
+                           tabnames = c("Main",if (NROW(cols)>0) paste0("Col. ",cols),"Source"),
+                           tabids = c(paste0("tabmain",tabid),if (NROW(cols)>0) paste0("tabcol", tabid,"_",cols),paste0("tabsource",tabid)),
+                           contents = c(list(main.html), cols.html, source.html)
+  )
+  return(html)
+}
+
+
+tab.reg.main.html = function(tab, ma, min.col.share=0.3) {
+  restore.point("tab.reg.main.html")
+
+  dat = tab$reg.df[[1]]
+
+
+
+  dat = dat %>%
+    group_by(tabid,col) %>%
+    mutate(
+      has.match = !is.na(col.best.num.match) & is.true(col.best.share.match > min.col.share),
+      num.match = sum(has.match),
+      unknown.match = is.true(num.match > col.best.num.match) & has.match
+    ) %>%
+    ungroup() %>%
+    arrange(tabid, row)
+
+  xlabels = unique(dat$xlabel)
+
+  dat = dat %>%
+    arrange(tabid, col, row)
+  cols = unique(dat$col)
+
+  dat = dat %>% mutate(
+    color = case_when(
+      num.match == 0 ~ "#000000",
+      # we know that this row has a match
+      has.match & !unknown.match ~ "#0000aa",
+      # unknown which row has match
+      has.match & unknown.match ~ "#aa00aa",
+      TRUE ~ "#880000"
+    )
+  )
+
+
+
+  na.to.empty = function(x) {
+    x[is.na(x)] = ""
+    x
+  }
+  tabtitle = na.to.empty(tab$table.title)
+
+  gr = tidyr::expand_grid(col=cols,xlabel=xlabels) %>%
+    left_join(dat, by=c("col","xlabel")) %>%
+    mutate(coef.str = na.to.empty(coef.big.str), par.str = na.to.empty(par.big.str))
+
+  var.rows = match(xlabels, dat$xlabel)
+  #lab.df = tibble(xlabel = xlabels, var = dat$var[var.rows])
+  lab.df = tibble(xlabel = xlabels)
+
+  col.rows = match(cols, dat$col)
+  col.df = tibble(col=cols)
+
+
+  str = paste0("<td title='","'>",lab.df$xlabel,"</td>")
+  for (col in cols) {
+    d = gr[gr$col == col,]
+    d$class = ifelse(is.true(d$has.match),"maincoef-cell context-link","")
+    #title = paste0("coef = ", signif(d$coef,5),"\nse = ",signif(d$se,5),"\np=",round(d$p,6))
+    title = ""
+    str = paste0(str, "<td class='",d$class,"' title='", title, "' data-col='",col,"'>",
+                 "<span style='color: ", d$color,"'>", d$coef.str,"</span>","<br>",
+                 "<span style='color: ", d$color,"'>", d$par.str,"</span>","</td>")
+  }
+  inner.html = paste0("<tr>",str,"</tr>",collapse="\n")
+
+  head1 = paste0("<th>(",col.df$col,")</th>", collapse="\n")
+  head = paste0("<tr><th></th>",head1,"</tr>")
+  foot = ""
+
+
+  html = paste0(
+    "<h4>",tabtitle,"</h4>",
+    "<table class='table-mini table table-striped maincoef-table' data-tabid='", tab$tabid,"'>",
+    head,
+    inner.html,
+    foot,
+    "</table>"
+  )
+  html
+}
+
+tab.col.matched.html = function(tab, col,su=NULL,ma=NULL, mdf=ma$mdf, rp.df=ma$rp.df, pdf.df=ma$pdf.df, max.code.char=30) {
+  restore.point("tab.col.matched.html")
+
+  tabid = tab$tabid
+  p = pdf.df[pdf.df$tabid==tabid & pdf.df$col==col,]
+  m = mdf[mdf$tabid==tabid & mdf$col==col,]
+  m = arrange(m,desc(col.num.match))
+
+  if (NROW(m)==0 | NROW(p)==0) return(NULL)
+
+  max.row = max(p$row)
+  regnums = unique(m$rp.regnum)
+
+
+  regnum = regnums[1]
+
+  rp.li = vector("list",length(regnums))
+
+  nr = max.row
+  i = 1
+  for (i in seq_along(regnums)) {
+    regnum = regnums[i]
+    r = rp.df[rp.df$rp.regnum == regnum,]
+    mr = m[m$rp.regnum == regnum,]
+    r$row = mr$row[match(r$rp.row, mr$rp.row)]
+    r$row[duplicated(r$row)] = NA
+
+    num.na = sum(is.na(r$row))
+    if (num.na>0) {
+      r$row[is.na(r$row)] = max.row+1:num.na
+    }
+    r = arrange(r, is.na(r$row), r$row)
+    rp.li[[i]] = r
+    nr = max(nr, max.row+num.na)
+  }
+
+  # Make inner cells
+  empty = rep("",nr)
+
+  inner = empty
+  # Column 1 and 2 from pdf.df
+  s = empty
+  rows = p$row
+  s[rows] = p$xlabel
+  inner = paste0("<td>",s,"</td>")
+
+  s = empty
+  rows = p$row
+  s[rows] = paste0("<span>", p$coef.big.str,"</span>","<br>",
+                   "<span>", p$par.big.str,"</span>","</td>")
+  inner = paste0(inner,"<td>",s,"</td>")
+
+  for (i in seq_along(rp.li)) {
+    r = rp.li[[i]]
+    s = empty
+    rows = r$row
+    s[rows] = r$var
+    inner = paste0(inner,"<td>",s,"</td>")
+
+    s = empty
+    s[rows] = paste0("<span>", r$coef,"</span>","<br>",
+                     "<span>(", r$se,")</span>")
+    inner = paste0(inner,"<td>",s,"</td>")
+  }
+  inner.html = paste0("<tr>",inner,"</tr>",collapse="\n")
+
+  head = "<th colspan='2'>Table from PDF</th>"
+  i = 1
+
+  for (i in seq_along(rp.li)) {
+    r = rp.li[[i]]
+
+    rows = match(r$doid, su$dotab$doid)
+    r$donum = su$dotab$donum[rows]
+    share.match = round(100*sum(r$row <= max.row) / NROW(p),1)
+    head = paste0(head, "<th colspan='2'>",
+                  "<a href='", do.line.link(first(r$donum), first(r$orgline)),"'>",
+                  first(paste0(r$doid,".do"))," ",share.match,  "%<br>",
+                  "<span style='font-size: 1rem; font-family: Consolas;'>",
+                  shorten.str(first(r$code),50),
+                  "</span></a></th>")
+  }
+
+  foot = NULL
+  tabtitle = first(p$table.title)
+  html = paste0("<h5>",tabtitle,"</h5><table class='table-mini table table-striped '>",
+                head,
+                inner.html,
+                foot,
+                "</table>")
+  html
+
+}

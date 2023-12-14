@@ -1,0 +1,22 @@
+name: html_cmd
+
+descr: |
+  The rows correspond to cmd_ind in html_do_chunk.
+
+  The first row starts with 1.
+
+  Will contain information only for non-regression commands
+  for which numbers will be mapped.
+
+  We sort descendingly by in how many tables, cells the cmd is
+  the best match.
+fields:
+  cmd_ind:
+    type: int
+
+  # Only part below will be added to HTML
+  cmd:
+    descr: Name of the cmd
+  bg_color:
+    descr: hex code of background color
+

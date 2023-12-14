@@ -1,0 +1,254 @@
+project.do.tabs.html = function(project.dir, ma = readRDS.or.null(paste0(project.dir,"/repbox/matched_tabs.Rds")),su = readRDS.or.null(paste0(project.dir,"/repbox/stata/repbox_results.Rds")), do.max.runs=8000, line.max.runs=25, inline=FALSE, title.html=NULL, add.match.info=TRUE) {
+  restore.point("repbox.do.tabs.html")
+
+  if (is.null(su)) return(NULL)
+
+  tab = su$tab
+  dotab = su$dotab
+  regtab = filter(tab, is.regcmd)
+
+
+  if (!is.null(ma$mdf)) {
+    mdf=ma$mdf %>%
+      left_join(select(su$tab,line,donum,orgline),by=c("donum","line")) %>%
+      mutate(pdf.tab.link = paste0(
+        '<a href="',arttab.link(tabid, col=NULL),'">',round(col.share.match*100),"% ", tpname, '</a>',
+        '<a href="',arttab.link(tabid, col=col),'"> Col. (',col,') </a>'
+      ))
+
+  } else {
+    mdf = NULL
+  }
+
+  if (!is.null(ma$run.err.num.span.txt) & add.match.info) {
+    # If we have matches, we may search for numbers
+    # and need the logtxt number into spans
+    # This span.log.txt was generated while matching
+
+    # TO DO: Need to check why numbers may not match
+    try(su$run.df$logtxt <- ma$run.err.num.span.txt)
+  }
+
+  # We may ignore command runs
+  # if do file and line has too many
+  # rows in su$run.df
+  # This can blow up websites massively
+  su$run.df = adapt.too.big.run.df(su$run.df,do.max.runs = do.max.runs, line.max.runs = line.max.runs)
+
+  run.df = su$run.df
+
+  log.info.html = log.info.html(run.df, inline=inline, project.dir)
+
+  project = basename(project.dir)
+
+  outer.tabids = paste0("dotab_", dotab$donum)
+
+  contents = lapply(seq_len(NROW(dotab)), function(i) {
+    restore.point("jnsdjsjd")
+    donum = dotab$donum[[i]]
+    do.file = dotab$file[[i]]
+    if (!file.exists(do.file)) {
+      do.file = paste0(project.dir,"/",str.right.of(do.file, paste0("/",project,"/")))
+    }
+
+    do.txt = readLines(do.file,warn = FALSE)
+    otabid = outer.tabids[i]
+
+    do.html = HTML(do.code.html(do.txt, donum=donum, mdf=mdf, run.df=run.df, tab=tab, regtab=regtab, log.info.html=log.info.html))
+    return(do.html)
+
+    html = repboxTabSetPanel(id=paste0("innertabset_",otabid), tabnames =c("Code","Comparison"),tabids = paste0(c("codetab_","comparetab_"),otabid),contents = do.html)
+
+  })
+
+  html = repboxTabSetPanel(type="pills",id="dotabs",tabnames = paste0(dotab$doid,".do"),tabids = outer.tabids,contents = contents)
+
+  if (!is.null(title.html))
+    html=paste0(title.html, html)
+
+  return(html)
+}
+
+
+adapt.too.big.run.df = function(run.df, do.max.runs=20000, line.max.runs=25) {
+  restore.point("adapt.too.big.run.df")
+  length(unique(run.df$line))
+  run.df = run.df %>%
+    group_by(donum, line) %>%
+    mutate(line.run.count = 1:n()) %>%
+    ungroup() %>%
+    filter(line.run.count <= line.max.runs) %>%
+    group_by(donum) %>%
+    mutate(do.run.count = 1:n()) %>%
+    ungroup() %>%
+    filter(do.run.count <= do.max.runs)
+
+  run.df
+}
+
+do.code.html = function(do.txt, log.info.html, mdf,run.df,tab, regtab, do.file=NULL, donum, use.table = TRUE,min.col.share = 0.3, show.reg=FALSE, unfold.all.btn=TRUE) {
+  restore.point("do.code.html")
+
+  #if (donum == "1 Tables") stop()
+
+  reg = regtab[regtab$donum==donum,]
+  log.info.html = log.info.html[log.info.html$donum == donum,]
+  ldf = tibble(orgline = seq_along(do.txt), txt = htmlEscape(do.txt),is.reg = orgline %in% reg$orgline, comment="", title="", class="", infobtn="", infobox="")
+
+  # Aggregate match info on orgline level
+  # Create pdf.tab.link
+  md = mdf[mdf$donum==donum,]
+  if (!is.null(md)) {
+    ml = md %>%
+      group_by(orgline) %>%
+      filter(col.share.match > min.col.share) %>%
+      arrange(desc(col.share.match)) %>%
+      summarize(
+        is.match = TRUE,
+        pdf.tab.link = paste0(unique(pdf.tab.link), collapse=", ")
+      )
+    ldf = left_join(ldf, ml, by="orgline")
+  } else {
+    ldf$is.match = FALSE
+    ldf$pdf.tab.link = NA
+  }
+
+  # Aggregate run error info on orgline level
+  re = run.df[run.df$donum==donum,]
+  rel = re %>%
+    group_by(orgline) %>%
+    summarize(
+      cmdline = first(cmdline),
+      runerr = any(is.true(runerr)),
+      runerrmsg = trimws(paste0(unique(trimws(runerrmsg)), collapse=" ")),
+      runsec = mean(runsec)
+    ) %>%
+    arrange(orgline) %>%
+    mutate(
+      firsterr = is.true(runerr & (seq_len(n())==1 | !lag(runerr)))
+    )
+
+  ldf = left_join(ldf, rel, by="orgline")
+
+  # Set commands that were not run to error
+  # This is usually the case due to an earlier error
+  # in a loop
+  ta = tab[tab$donum == donum,]
+  ldf$is.cmd = ldf$orgline %in% ta$orgline[!ta$cmd %in% c("}","end","program","if","else")]
+  #rows = which(ldf$is.cmd & is.na(ldf$runerr))
+  ldf$not.run = ldf$is.cmd & is.na(ldf$runerr)
+  #ldf$runerr[rows] = TRUE
+
+  rows = log.info.html$orgline
+  ldf$infobtn[rows] = log.info.html$log.info.btn
+  ldf$infobox[rows] = log.info.html$log.info.div
+
+  rows = !is.na(ldf$pdf.tab.link)
+  if (show.reg) {
+    ldf$comment[rows] = paste0(ldf$comment[rows],'<code class="table-comment">/* ',ldf$pdf.tab.link[rows],' */</code>\n')
+  }
+
+  rows = which(ldf$firsterr)
+  #ldf$comment[rows] = paste0(ldf$comment[rows],'\n<code class="error-comment">/* Error in next command: ',ldf$runerrmsg[rows],'\n', ldf$cmdline[rows],'\n*/</code>\n')
+  ldf$comment[rows] = paste0(ldf$comment[rows],'\n<code class="error-comment">// Error in ',ldf$runerrmsg[rows],'</code>\n')
+
+  #ldf$class = ifelse(is.true(ldf$runerr), "err-line","noerr-line")
+  ldf$class = case_when(
+    is.true(ldf$runerr) ~ "err-line",
+    is.true(ldf$not.run) ~ "norun-line",
+    TRUE ~ "noerr-line"
+  )
+
+  rows = is.true(ldf$is.reg)
+  ldf$class[rows] = paste0(ldf$class[rows]," ","reg-cmd")
+
+
+  if (unfold.all.btn) {
+    unfold.all.code = paste0('<tr><td colspan="1"><button class="toogle-all-results btn btn-xs" title="Show or hide all results" style="color: #880000" onclick="$(\'#dotab_',donum,' .collapse\').collapse(\'toggle\');">&#x25BC;</button></td></tr>')
+  } else {
+    unfold.all.code = ""
+  }
+
+  if (use.table) {
+    ldf = ldf %>% mutate(
+      html.txt = paste0(
+'<tr><td>',infobtn,'<td class="code-line-td">',orgline,'</td><td><pre class = "do-pre">',comment,
+  '<code id="cb_',orgline,'_',donum,'" class="colorbar"></code>',
+  '<code id="L',orgline,'___',donum,'" class="',class,'">',txt,'</code></pre>',
+  infobox,'</td></tr>')
+    )
+    inner = paste0(ldf$html.txt, collapse="\n")
+    code.html = paste0(unfold.all.code,"<table class='code-tab'>\n",inner,"</table>")
+
+  } else {
+    ldf = ldf %>% mutate(
+      html.txt = paste0(comment,  '<pre class = "do-pre"><code id="L',orgline,'___',donum,'" class="',class,'">',infobtn,txt,'</code></pre>', infobox)
+
+    )
+    inner = paste0(ldf$html.txt, collapse="\n")
+
+    #code.html = paste0('<pre class = "do-pre">', inner,"</pre>")
+    code.html = paste0('<div>', inner,"</div>")
+  }
+
+  return(code.html)
+}
+
+log.info.html = function(run.df, inline=inline, project.dir, max.char = 50000) {
+  restore.point("log.info.html")
+  i = 1
+  n = NROW(run.df)
+  if (n==0) return(list())
+
+  # include images, possibly inline with bas64 encoding
+  img.dir = paste0(project.dir, "/repbox/www/images")
+  run.df$img.src = ""
+  rows = which(run.df$out.img.file != "")
+  if (length(rows)>0) {
+    if (inline==FALSE) {
+      run.df$img.src[rows] = repbox.link(paste0("images/",run.df$out.img.file[rows]))
+    } else {
+      run.df$img.src[rows] = lapply(rows, function(row) {
+        knitr::image_uri(paste0(img.dir,"/", run.df$out.img.file[row]))
+      }) %>% unlist()
+    }
+  }
+
+  #repbox.link(paste0("images/",run.df$out.img.file))
+  log.info.html = run.df %>%
+    mutate(
+      logtxt = ifelse(endsWith(trimws(cmdline),"{"), "", logtxt),
+      len.logtxt = nchar(logtxt)
+    ) %>%
+    mutate(
+      logtxt = ifelse(is.true.vec(len.logtxt > max.char), paste0(substring(logtxt,1, max.char), "\n... further output ommited ..."), logtxt)
+    ) %>%
+    mutate(
+      img.tag = ifelse(out.img.file =="","",paste0(
+"\n<img src='",img.src,"' style='max-width: 100%'>\n"
+      )),
+      logtxt.html = paste0(img.tag,'
+<pre class="logtxt-pre"><code class="logtxt-code">',
+        # We might get a warning in has.substr if cmdline = ""
+        ifelse(suppressWarnings(has.substr(logtxt, cmdline)), "",paste0(cmdline,"\n")),
+        logtxt,'</code></pre>'
+      )
+    ) %>%
+    group_by(donum, orgline) %>%
+    summarize(
+      is.regcmd = first(is.regcmd),
+      runs = n(),
+      log.info.div = paste0(
+        '<div class="collapse"  id = "loginfo-',orgline,'-', donum,'">',
+        ifelse(n()==1,
+          logtxt.html,
+          repboxTabSetPanel(tabnames = paste0("Run ",1:n()),contents = logtxt.html, ul.class="small-tab-ul")
+        ),
+        '</div>'
+      ),
+      log.info.btn = paste0('<a class="btn btn-xs" role="button" data-toggle="collapse" href="#loginfo-',orgline,'-', donum,'" aria-expanded="false">&#x25BC;</a>')
+    )
+
+  log.info.html
+
+}

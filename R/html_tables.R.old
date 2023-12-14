@@ -1,0 +1,124 @@
+project.tab.tabs.html = function(project.dir,  ma = readRDS.or.null(paste0(project.dir,"/repbox/matched_tabs.Rds")), su = readRDS.or.null(paste0(project.dir,"/repbox/stata/repbox_results.Rds")), show.figure=FALSE, show.unknown=TRUE, show.reg = FALSE) {
+  restore.point("project.tab.tabs.html")
+
+  tabs.df = readRDS.or.null(paste0(project.dir,"/repbox/arttab.Rds"))
+
+  if (NROW(tabs.df)==0) {
+    return("<p>No table has been extracted from the PDF.</p>")
+  }
+
+  # Overwrite default color spans if we have matching
+  # Then a grey background indicates non-matches
+  if (!is.null(ma$tab.span.txt)) {
+    tabs.df$color.tab.txt = ma$tab.span.txt
+  }
+
+  if (!show.figure) {
+    tabs.df = filter(tabs.df, !startsWith(tabname,"Figure"))
+  }
+  if (!show.unknown) {
+    tabs.df = filter(tabs.df, !startsWith(tabname,"Unknown"))
+  }
+
+  if (NROW(tabs.df)==0) {
+    return("<p>No table has been extracted from the PDF.</p>")
+  }
+
+
+
+  tabids = tabs.df$tabid
+  tabid = 1
+  contents = lapply(tabids, function(tabid) {
+    tab = tabs.df[tabs.df$tabid == tabid, ]
+    source.tab.html(tab,ma)
+  })
+
+  html = paste0(
+    repboxTabSetPanel(
+      id=paste0("tabtabs"),
+      tabnames = paste0(tabs.df$tpname),
+      tabids = paste0("tabtab",tabids),
+      contents = contents, type="pills"
+    ),"\n",
+    '<div id="link-menu"></div>'
+  )
+  html
+}
+
+
+make.pdf.df.without.matches = function(project.dir) {
+  restore.point("make.pdf.df.without.matches")
+  pdf.tabs = readRDS.or.null(paste0(project.dir, "/repbox/arttab.Rds"))
+  if (NROW(pdf.tabs)==0) {
+    return(NULL)
+  }
+
+  pdf.df = bind_rows(pdf.tabs$reg.df) %>% ungroup()
+
+  pdf.df = pdf.df %>%
+    left_join(select(pdf.tabs, tabid, table.title, tabname, tpname), by="tabid") %>%
+    group_by(tabid, col) %>%
+    mutate(col.num.coef = n()) %>%
+    group_by(tabid) %>%
+    mutate(row = match(coef.line, sort(unique(coef.line)))) %>%
+    ungroup() %>%
+    mutate(
+      col.best.num.match = 0,
+      col.best.share.match = 0
+    )
+
+  return(pdf.df)
+}
+
+source.tab.html = function(tab,ma) {
+  restore.point("source.tab.html")
+  if (!is.null(ma$num.match.agg)) {
+    agg = ma$num.match.agg %>%
+      filter(tabid == tab$tabid)
+  } else {
+    agg = NULL
+  }
+  if (NROW(agg)>0) {
+    restore.point("skhjkdh")
+    agg.html = paste0(agg$tab.num.count," numbers. ", round(agg$match.share*100),"% match with ", agg$donum,".do (", round(agg$match.share*100),"% with all code)")
+  } else {
+    agg.html = ""
+  }
+  ma$num.match.agg
+  html = paste0(
+    #if (!is.na(tab$table.title))
+    #  paste0("<h4>",tab$table.title,"</h4>"),
+    #if (!is.na(tab$panel.title))
+    #  paste0("<h5>",tab$panel.title,"</h5>"),
+    agg.html,
+    #paste0('<button class="btn btn-secondary btn-xs" onclick=mark_source_table_nums(',tab$tabid,')>Mark in code</button>'),
+    "<pre id='source-tab-",tab$tabid,"' style='background-color: #fff'>",tab$color.tab.txt,"</pre>"
+  )
+}
+
+
+num.search.html = function(su, ma) {
+  restore.point("num.search.html")
+
+  run.df = su$run.df
+
+  re_rows_cmd = paste0("[",paste0('"',run.df$cmd,'"', collapse=", "),"]")
+  re_rows_is_reg = paste0("[",paste0(ifelse(run.df$is.regcmd,"true","false"), collapse=", "),"]")
+
+
+  doid_json = paste0("[",paste0('"',su$dotab$doid,'"', collapse=", "),"]")
+
+  js = paste0(
+    "const doid_arr = \n", doid_json,";\n\n",
+    "const re_rows_cmd = ", re_rows_cmd,";\n\n",
+    "const re_rows_is_reg = ", re_rows_is_reg,";\n\n",
+    "const pdf_num_li = \n",
+    ma$pdf.num.json,
+    ";\n\n",
+    "const stata_num_arr = \n",
+    ma$stata.num.json,
+    ";"
+  )
+  html = paste0("<script>\n",js,"\n</script>")
+  html
+}

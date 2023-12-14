@@ -1,0 +1,56 @@
+name: html_do_chunk
+
+descr: |
+  Chunks are a subset of runs.
+
+  They include only those commands whose numbers will be matched.
+
+  Chunks also include regression commands.
+
+  This table has one entry per chunk: the first chunk starts with
+  index 1.
+fields:
+  runid:
+    type: int
+
+  chunkid:
+    type: int
+
+  step:
+    type: int
+
+  cmd:
+
+  is_reg:
+    type: bool
+
+  # Only the fields below will be used in the HTML
+  # The fields above are for more convenience and transparency
+  # when working with R
+
+  regchunkid:
+    type: int
+    descr: Row for tables that only store information for regression chunks
+
+  script_num:
+    type: int
+
+  orgline:
+    type: int
+
+  cmd_ind:
+    type: int
+    descr: |
+      Integer index of chunk command.
+
+      Negative if a regression command.
+
+      Positive if a non-regression command.
+
+      For non-regression commands used for background
+      color-coding of matches.
+
+      For regression commands background color-coding
+      is determined by reg_num_type instead,
+      but we might use the cmd name as info
+      in the context menu.

@@ -1,0 +1,30 @@
+name: html_do_num
+
+descr: |
+  Information about numbers in do files. Used in HTML files
+  for interactive mapping with numbers in article tables.
+
+  These tables are on purpose as small as possible, since
+  they will be added in the HTML files, i.e.
+  we omit stuff like artid.
+
+  We still use the regmap format for better documentation.
+
+  The table will be sorted increasingly in num.
+  The index of this table (startig with 0) will be used as
+  an ID for each number in the logtxt, i.e.
+  we will wrap relevant number in logtxt into a <nu></nu> tag like
+  <nu id="donu_25">1.345</nu>
+
+fields:
+  chunkid:
+    descr: |
+      A global index for the output chunk counted over the complete
+      project and all log outputs for which numbers are matched
+      (there might be several per line).
+      Will directly describe the row in html_do_chunk starting
+      with 1.
+    type: int
+
+  num:
+    type: num

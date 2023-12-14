@@ -1,0 +1,13 @@
+Package: repboxHtml
+Type: Package
+Title: HTML reports for repbox
+Version: 0.1
+Author: Sebastian Kranz (Ulm University)
+Maintainer: Sebastian Kranz <sebastian.kranz@uni-ulm.de>
+Description: 
+License: GPL >= 3.0
+Depends: dplyr, restorepoint, stringtools, stringi, htmltools,
+         shiny, repboxDB, data.table, repboxUtils
+Encoding: UTF-8
+LazyData: true
+

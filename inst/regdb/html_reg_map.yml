@@ -1,0 +1,24 @@
+name: html_reg_map
+
+descr: |
+  Information about regression matches between article tables
+  and code regressions.
+fields:
+  regid:
+    type: int
+
+  chunkid:
+    type: int
+    descr: |
+      For each chunk, we also have a step index that marks
+      the regression index. But chunk allows to directly
+      access the html_do_chunk table
+
+  match_score:
+    type: num
+
+  paren_num_type:
+    type: int
+    descr: |
+      Num type of values in parenthesis. See html_tab_num_cell for
+      a value description

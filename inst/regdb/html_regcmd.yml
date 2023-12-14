@@ -1,0 +1,17 @@
+name: html_regcmd
+
+descr: |
+  The rows correspond to -cmd_ind in html_do_chunk.
+
+  The first row starts with 1.
+
+  Will contain information only for regression commands
+
+fields:
+  regcmd_ind:
+     type: int
+
+  # Only part below will be shown in HTML
+  cmd:
+    descr: Name of the cmd
+

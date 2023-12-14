@@ -1,0 +1,84 @@
+name: html_tab_num_cell
+
+descr: |
+  Information about cells with numbers in article table.
+  Used in HTML files for interactive mapping with numbers in do chunks.
+
+  These tables are on purpose as small as possible, since
+  they will be added in the HTML files, i.e.
+  we omit stuff like artid.
+
+fields:
+
+  cellid:
+    type: int
+
+  # The following three fields
+  # allow to map with art_tab_cell except that we use tabpos
+  # instead of tabid
+  tabpos:
+    type: int
+
+  row:
+    type: int
+
+  block:
+    type: int
+
+  # The numbers in html_do_num are sorted increasingly
+  # We just store the start and end index (starting with 1)
+  do_num_start_ind:
+    type: int
+
+  do_num_end_ind:
+    type: int
+
+  regid:
+    descr: |
+      If the cell is part of a regression then we store the artices regid
+      A 0 will indicate no regression
+    type: int
+
+  reg_num_type:
+    descr: |
+      What sort of number does the cell display. Currently
+      only specified for numbers from a regression.
+    type: int
+    val_descr:
+      0: No special characterization
+      1: Regression coefficient
+      2: Regression parenthesis
+      3: Regression se
+      4: Regresson t
+      5: Regression p
+      10: General regression stat
+      11: Regression nobs
+      12: Regression r2
+
+
+  best_match_type:
+    type: int
+    val_descr:
+      0: No match at all
+      1: Best regression
+      2: Regression but not best
+      3: Should be regression but only noreg num is matched
+      4: Best noreg match
+      5: Noreg match but not best in block
+
+  best_match_chunkid:
+    type: int
+    descr: |
+      Chunk number of the "best" match. This will determine the
+      initial color coding. Will be -1 if there is no good match.
+
+      The background color will depend on the type:
+        for a regression match bg color is constant
+        for a non-regression match bg color depends on cmd_type
+
+      The border color for noreg matches will depend on the chunk index
+
+      The best match will be previously computed in R.
+
+      Interactively, we will be able to color code (and link to)
+      different matches by letting JS perform the matching.

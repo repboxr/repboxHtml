@@ -1,0 +1,63 @@
+<h3>Code analyis for "{title}"</h3>
+
+<p>
+This is an automated report of the Stata do files in the code and data supplement of the article <a href="{article_url}">{title}</a> ({Journ}, {year}) by  {authors}. The report was generated using the Repbox project (pilot version) by Sebastian Kranz (Ulm University).
+</p>
+<ul>
+<li><a href="do.html">Log of do files (HTML based)</a></li>
+<li><a href="{data_url}">Data and code supplement</a></li>
+{readme_li}
+</ul>
+
+<h4>Overview</h4>
+
+<!---
+<table id="ejd-overview-tab" class="table-mini table table-striped">
+<tr><td>Stata commands without error:</td><td>{noerr_share}</td></tr>
+<tr><td>Missing data files:</td><td>{num_misssing_data}</td></tr>
+<tr><td>Existing data files:</td><td>{num_existing_data}</td></tr>
+<tr><td>Timeout?</td><td>{has_timeout}</td></tr>
+</table>
+--->
+
+<ul>
+<li>Stata commands without error: {noerr_share} </li>
+<li>Missing data files: {num_misssing_data} </li>
+<li>Existing data files: {num_existing_data}</li>
+<li>Has timeout? {has_timeout}</li>
+</ul>
+
+<p>{info_txt}</p>
+
+<h4>Do files</h4>
+<p>The following table shows a summary for all Stata do files in the code supplement. {timeout_info}</p>
+
+{re_sum}
+
+
+<p>The table shows for each do file how many commands were succesfully run, for how many commands the data set was missing and how many other errors occured. You can click on a do file to view an HTML based log file of the executed code.</p>
+
+{data_sets_html}
+
+<h4>About</h4>
+
+<p>
+This report and the HTML based log files were automatically generated using a pilot version of a software project called <i>Repbox</i> currently developed by <a href = "https://www.uni-ulm.de/mawi/mawi-wiwi/institut/mitarbeiter/skranz/">Sebastian Kranz (Ulm University)</a>. Repbox tries to automatically run Stata code in supplements, using strategies like automatic file path correction to improve reproducibility. Currently only the pilot version of  Repbox exists. I am part of a group of researchers who plan to submit a proposal for third party funding to substantially extend the features and the reliability of the Repbox project.
+</p>
+
+
+<script type="text/javascript">
+var sc_project=12817360;
+var sc_invisible=1;
+var sc_security="b4b321ff";
+var sc_client_storage="disabled";
+</script>
+<script type="text/javascript"
+src="https://www.statcounter.com/counter/counter.js"
+async></script>
+<noscript><div class="statcounter"><a title="Web Analytics"
+href="https://statcounter.com/" target="_blank"><img
+class="statcounter"
+src="https://c.statcounter.com/12817360/0/b4b321ff/1/"
+alt="Web Analytics"
+referrerPolicy="no-referrer-when-downgrade"></a></div></noscript>
