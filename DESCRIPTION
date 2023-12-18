@@ -4,7 +4,7 @@ Title: HTML reports for repbox
 Version: 0.1
 Author: Sebastian Kranz (Ulm University)
 Maintainer: Sebastian Kranz <sebastian.kranz@uni-ulm.de>
-Description: 
+Description: HTML reports for repbox
 License: GPL >= 3.0
 Remotes: skranz/stringtools
 Depends: dplyr, restorepoint, stringtools, stringi, htmltools,
