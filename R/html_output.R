@@ -1,7 +1,7 @@
 # Report of generated output in do files:
 # currently Latex tables and graphs
 
-project.output.report.html = function(project.dir,www.dir=file.path(project.dir, "repbox/www"), su = readRDS.or.null(paste0(project.dir,"/repbox/stata/repbox_results.Rds")), standalone=FALSE) {
+project.output.report.html = function(project_dir,www.dir=file.path(project_dir, "repbox/www"), su = readRDS.or.null(paste0(project_dir,"/repbox/stata/repbox_results.Rds")), standalone=FALSE) {
   restore.point("project.output.report.html")
 
   if (is.null(su)) return(NULL)
@@ -14,7 +14,7 @@ project.output.report.html = function(project.dir,www.dir=file.path(project.dir,
       title = paste0("<h2><a href='",do.line.link(donum,orgline),"'>", run.df$donum,".do line ", run.df$orgline,"</a></h2>")
     )
 
-  img.dir = paste0(project.dir, "/repbox/www/images")
+  img.dir = paste0(project_dir, "/repbox/www/images")
   run.df$img.src = ""
   rows = which(run.df$out.img.file != "")
   if (length(rows)>0) {
@@ -53,7 +53,7 @@ font-color: white;
 </style>
   "
 
-  html = paste0(style,"<div id='main'><h1>Latex Tables and Figures Generated in Do Files (", basename(project.dir),")</h1>",
+  html = paste0(style,"<div id='main'><h1>Latex Tables and Figures Generated in Do Files (", basename(project_dir),")</h1>",
     "This page shows the latex tables and graphs generated in the project's do files. Some graphs may be missing if the corresponding command is not yet part of our list of commands. Note that you can search in your web browser for numbers in Latex tables even though the tables are shown as images. Above each table the latex source code is secretely shown with font size 1 in white color.</p>",
     paste0(run.df$title, "\n", run.df$content, collapse ="\n"),
     "</div>"

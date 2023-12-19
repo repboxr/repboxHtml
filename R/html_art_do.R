@@ -3,18 +3,18 @@
 
 example = function() {
   library(repboxHtml)
-  project.dir = "~/repbox/projects_reg/aejapp_3_2_2"
-  html = html_do_and_tab(project.dir)
-  html.dir = file.path(project.dir,"reports")
+  project_dir = "~/repbox/projects_reg/aejapp_3_2_2"
+  html = html_do_and_tab(project_dir)
+  html.dir = file.path(project_dir,"reports")
   repbox_save_html(repbox_html_page(html), "do_tab.html", html.dir)
 
   rstudioapi::filesPaneNavigate(html.dir)
   rstudioapi::filesPaneNavigate("~/repbox/repboxHtml/R")
 }
 
-html_do_and_tab = function(project.dir, parcels=NULL,opts = repbox_html_opts(add_mapping=TRUE)) {
-  do_html = html_all_do(project.dir, parcels, opts)
-  tab_html = html_art_tabs(project.dir, parcels, opts)
+html_do_and_tab = function(project_dir, parcels=NULL,opts = repbox_html_opts(add_mapping=TRUE)) {
+  do_html = html_all_do(project_dir, parcels, opts)
+  tab_html = html_art_tabs(project_dir, parcels, opts)
 
   ui = fluidPage(
     div(class="row",style="height: 100vh;",

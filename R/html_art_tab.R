@@ -1,22 +1,22 @@
 example = function() {
   library(repboxHtml)
-  project.dir = "~/repbox/projects_reg/aejapp_3_2_2"
-  html = html_art_tabs(project.dir)
-  html.dir = file.path(project.dir,"reports")
+  project_dir = "~/repbox/projects_reg/aejapp_3_2_2"
+  html = html_art_tabs(project_dir)
+  html.dir = file.path(project_dir,"reports")
   repbox_save_html(repbox_html_page(html), "art_tab.html", html.dir)
 
   rstudioapi::filesPaneNavigate(html.dir)
   rstudioapi::filesPaneNavigate("~/repbox/repboxHtml/R")
 }
 
-html_art_tabs = function(project.dir, parcels=NULL, opts = repbox_html_opts(add_mapping=add_mapping), add_mapping=TRUE) {
+html_art_tabs = function(project_dir, parcels=NULL, opts = repbox_html_opts(add_mapping=add_mapping), add_mapping=TRUE) {
   restore.point("html_art_tabs")
 
-  parcels = regdb_load_parcels(project.dir, c("art_tab","art_tab_cell"), parcels)
+  parcels = regdb_load_parcels(project_dir, c("art_tab","art_tab_cell"), parcels)
 
   tab_df = parcels$art_tab$art_tab
   if (is.null(tab_df)) {
-    parcels = regdb_load_parcels(project.dir,"art")
+    parcels = regdb_load_parcels(project_dir,"art")
     art = parcels$art$art[1,]
     return(paste0('<h5>No tables detected in the article "', art$title,'" <a href="', art$pdf_url,'" target="_blank">🡥</a></h5>'))
   }
@@ -28,7 +28,7 @@ html_art_tabs = function(project.dir, parcels=NULL, opts = repbox_html_opts(add_
 
   if (opts$add_mapping) {
     new_parcels = c(new_parcels, "map_cell", if (opts$add_tab_report) c("stata_cmd_tab_fig_ref","stata_run_cmd"))
-    parcels = regdb_load_parcels(project.dir, new_parcels, parcels)
+    parcels = regdb_load_parcels(project_dir, new_parcels, parcels)
     map_df = parcels$map_cell$map_cell
     add_mapping = !is.null(map_df)
   } else {
@@ -37,7 +37,7 @@ html_art_tabs = function(project.dir, parcels=NULL, opts = repbox_html_opts(add_
 
   if (add_mapping) {
     new_parcels = c(new_parcels, "map_cell", if (opts$add_tab_report) c("stata_cmd_tab_fig_ref","stata_run_cmd"))
-    parcels = regdb_load_parcels(project.dir, new_parcels, parcels)
+    parcels = regdb_load_parcels(project_dir, new_parcels, parcels)
     map_df = parcels$map_cell$map_cell
 
     cell_df = cell_df %>% left_join(select(map_df, cellid, block, regid, num_type,match_type, runid, variant, block, cmd), by=c("cellid"))

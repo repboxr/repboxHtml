@@ -1,33 +1,33 @@
 example = function() {
   library(repbox)
-  project.dir = "/home/rstudio/repbox/projects/testsupp"
-  project.dir = "/home/rstudio/repbox/projects/aejapp_vol_6_issue_3_article_7"
-  repbox.report.html(project.dir)
+  project_dir = "/home/rstudio/repbox/projects/testsupp"
+  project_dir = "/home/rstudio/repbox/projects/aejapp_vol_6_issue_3_article_7"
+  repbox.report.html(project_dir)
 }
 
-repbox.report.html = function(project.dir,  su = readRDS.or.null(paste0(project.dir,"/repbox/stata/repbox_results.Rds")), ma=readRDS.or.null(paste0(project.dir,"/repbox/matched_tabs.Rds")), show.figure=FALSE, show.unknown=TRUE
+repbox.report.html = function(project_dir,  su = readRDS.or.null(paste0(project_dir,"/repbox/stata/repbox_results.Rds")), ma=readRDS.or.null(paste0(project_dir,"/repbox/matched_tabs.Rds")), show.figure=FALSE, show.unknown=TRUE
 ) {
   restore.point("repbox.report.html")
 
   prefix = paste0("")
   options(repbox.url.prefix = prefix)
-  www.dir = paste0(project.dir,"/repbox/www_report")
+  www.dir = paste0(project_dir,"/repbox/www_report")
   if (!dir.exists(www.dir))
     dir.create(www.dir)
 
   head = repbox.www.head()
 
-  repbox.copy.shared.www(project.dir,www.dir = www.dir,  overwrite = TRUE)
+  repbox.copy.shared.www(project_dir,www.dir = www.dir,  overwrite = TRUE)
 
-  project = basename(project.dir)
+  project = basename(project_dir)
   time = paste0(Sys.time(), " (UTC)")
 
   report.frag = readLines(system.file("fragments/report.html", package="repboxMain")) %>% merge.lines()
 
   do.err.frag = readLines(system.file("fragments/report_do_errors.html", package="repboxMain")) %>% merge.lines()
 
-  do.tab.html = report.do.html(project.dir, su, ma)
-  tab.tab.html = report.tab.html(project.dir,su, ma)
+  do.tab.html = report.do.html(project_dir, su, ma)
+  tab.tab.html = report.tab.html(project_dir,su, ma)
 
   dotab = su$dotab
   has.err = any(is.true(su$dotab$run.err | su$dotab$parse.err))
@@ -37,7 +37,7 @@ repbox.report.html = function(project.dir,  su = readRDS.or.null(paste0(project.
   } else {
     re_expl = "<p>Great, it looks as if your code runs without errors.</p>"
   }
-  data.info = datasets.info.html(project.dir)
+  data.info = datasets.info.html(project_dir)
   data_sets_html = data.info$html
 
   content.html = glue::glue(report.frag, project=project, time=time, re_sum=do.tab.html, tab_sum=tab.tab.html, re_expl=re_expl, data_sets_html=data_sets_html)
@@ -45,15 +45,15 @@ repbox.report.html = function(project.dir,  su = readRDS.or.null(paste0(project.
 
   # overview
   body = as.character(fluidPage(HTML(content.html)))
-  html = paste0("<html><title>Repbox Report for ",basename(project.dir),"</title>\n",head,"<style> p {max-width: 60em;}</style><body>",body, "</body></html>")
-  writeLines(html,paste0(project.dir,"/repbox/www_report/report.html"))
+  html = paste0("<html><title>Repbox Report for ",basename(project_dir),"</title>\n",head,"<style> p {max-width: 60em;}</style><body>",body, "</body></html>")
+  writeLines(html,paste0(project_dir,"/repbox/www_report/report.html"))
 
 
   # do pages
-  do.tabs.html = HTML(project.do.tabs.html(project.dir,ma = ma,su = su))
+  do.tabs.html = HTML(project.do.tabs.html(project_dir,ma = ma,su = su))
 
   # tab pages
-  tab.tabs.html = HTML(project.tab.tabs.html(project.dir,ma = ma,su=su, show.figure = show.figure, show.unknown = show.unknown))
+  tab.tabs.html = HTML(project.tab.tabs.html(project_dir,ma = ma,su=su, show.figure = show.figure, show.unknown = show.unknown))
 
   # Combined page
   num.search.html = num.search.html(su, ma)
@@ -69,23 +69,23 @@ repbox.report.html = function(project.dir,  su = readRDS.or.null(paste0(project.
     tags$script(src="number_marker.js")
   )
   body = as.character(ui) %>% merge.lines()
-  html = paste0("<html><title>Tables and Do: ",basename(project.dir),"</title>\n",head,"<body>",body, "</body></html>")
+  html = paste0("<html><title>Tables and Do: ",basename(project_dir),"</title>\n",head,"<body>",body, "</body></html>")
   writeLines(html,paste0(www.dir,"/do_and_tabs.html"))
 
-  img.dir = paste0(project.dir, "/repbox/www/images")
+  img.dir = paste0(project_dir, "/repbox/www/images")
   if (dir.exists(img.dir)) {
-    copy.dir(img.dir, paste0(project.dir,"/repbox/www_report/images"))
+    copy.dir(img.dir, paste0(project_dir,"/repbox/www_report/images"))
   }
 
   return(NULL)
 }
 
-report.do.html = function(project.dir, su, ma, link.with.tabs=TRUE, return.do.df = FALSE) {
+report.do.html = function(project_dir, su, ma, link.with.tabs=TRUE, return.do.df = FALSE) {
   restore.point("report.do.html")
 
-  sup.dir = file.path(project.dir,"mod")
+  sup.dir = file.path(project_dir,"mod")
   # Do files overview
-  do.files = get.project.do.files(project.dir)
+  do.files = get.project.do.files(project_dir)
 
   do.files = do.files[!startsWith(basename(do.files),"repbox_")]
   do.df = tibble(file = do.files, doid = tools::file_path_sans_ext(basename(do.files)))
@@ -216,7 +216,7 @@ report.do.html = function(project.dir, su, ma, link.with.tabs=TRUE, return.do.df
 
 }
 
-report.tab.html = function(project.dir,su=NULL, ma=NULL, show.reg = FALSE) {
+report.tab.html = function(project_dir,su=NULL, ma=NULL, show.reg = FALSE) {
   restore.point("tab.overview.html")
-  return(tab.overview.html(project.dir,su=su, ma=ma, show.reg=show.reg))
+  return(tab.overview.html(project_dir,su=su, ma=ma, show.reg=show.reg))
 }

@@ -1,7 +1,7 @@
 # Load run_df and merge log and script_num
-load_full_run_df = function(project.dir, parcels=NULL) {
+load_full_run_df = function(project_dir, parcels=NULL) {
   restore.point("load_full_run_df")
-  parcels = regdb_load_parcels(project.dir, c("script_source","stata_run_cmd","stata_run_log","stata_file","stata_cmd"))
+  parcels = regdb_load_parcels(project_dir, c("script_source","stata_run_cmd","stata_run_log","stata_file","stata_cmd"))
 
   run_df = parcels$stata_run_cmd$stata_run_cmd
   if (is.null(run_df)) return(NULL)
@@ -19,8 +19,8 @@ load_full_run_df = function(project.dir, parcels=NULL) {
 }
 
 # Load run_df and merge log and script_num
-load_full_cmd_df = function(project.dir, parcels=NULL) {
-  parcels = regdb_load_parcels(project.dir, c("stata_file","stata_cmd"))
+load_full_cmd_df = function(project_dir, parcels=NULL) {
+  parcels = regdb_load_parcels(project_dir, c("stata_file","stata_cmd"))
 
   cmd_df = parcels$stata_cmd$stata_cmd
   if (is.null(cmd_df)) return(NULL)

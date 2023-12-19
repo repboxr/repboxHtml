@@ -1,23 +1,23 @@
 example = function() {
   library(repboxMain)
-  project.dir = "~/repbox/projects_ejd/aejpol_12_4_10"
-  project.dir = "~/repbox/projects_ejd/aejmic_14_4_17"
-  project.dir = "~/repbox/projects_ejd/pandp_108_1_30"
-  repbox.ejd.html(project.dir)
-  rstudioapi::filesPaneNavigate(paste0(project.dir,"/repbox"))
+  project_dir = "~/repbox/projects_ejd/aejpol_12_4_10"
+  project_dir = "~/repbox/projects_ejd/aejmic_14_4_17"
+  project_dir = "~/repbox/projects_ejd/pandp_108_1_30"
+  repbox.ejd.html(project_dir)
+  rstudioapi::filesPaneNavigate(paste0(project_dir,"/repbox"))
 
 
-  repbox.make.www(project.dir, just.overview=!TRUE, overwrite.shared = TRUE,for.rstudio = TRUE)
+  repbox.make.www(project_dir, just.overview=!TRUE, overwrite.shared = TRUE,for.rstudio = TRUE)
 
-  project.dir = "~/repbox/projects_ejd/aejpol_12_4_10"
-  copy.ejd.www(project.dir)
-  project.dir = "~/repbox/projects_ejd/aejmic_13_2_11"
-  copy.ejd.www(project.dir)
+  project_dir = "~/repbox/projects_ejd/aejpol_12_4_10"
+  copy.ejd.www(project_dir)
+  project_dir = "~/repbox/projects_ejd/aejmic_13_2_11"
+  copy.ejd.www(project_dir)
 
 
   # This only works in 8333 container. Otherwise web is not linked!
   copy.all.ejd.www()
-  rstudioapi::filesPaneNavigate(paste0(project.dir,"/repbox"))
+  rstudioapi::filesPaneNavigate(paste0(project_dir,"/repbox"))
   rstudioapi::filesPaneNavigate("~/repbox/repboxMain/R")
 }
 
@@ -57,19 +57,19 @@ copy.all.ejd.www = function(project.dirs, ejd.repbox.dir = "~/web/repbox", overw
   restore.point("copy.all.ejd.www")
   project.dirs = get.ejd.projects(project.dirs)
   res = lapply(seq_along(project.dirs), function(i) {
-    project.dir = project.dirs[i]
-    cat("\n",i,project.dir)
-    copy.ejd.www(project.dir, ejd.repbox.dir, overwrite=overwrite)
+    project_dir = project.dirs[i]
+    cat("\n",i,project_dir)
+    copy.ejd.www(project_dir, ejd.repbox.dir, overwrite=overwrite)
   })
 
 }
 
 
-copy.ejd.www = function(project.dir, ejd.repbox.dir = "~/web/repbox", overwrite=TRUE) {
+copy.ejd.www = function(project_dir, ejd.repbox.dir = "~/web/repbox", overwrite=TRUE) {
   restore.point("copy.ejd.www")
-  source.dir = file.path(project.dir, "repbox","www_ejd")
+  source.dir = file.path(project_dir, "repbox","www_ejd")
   if (!file.exists(source.dir)) return()
-  art = readRDS(file.path(project.dir,"meta","ejd_art.Rds"))
+  art = readRDS(file.path(project_dir,"meta","ejd_art.Rds"))
 
   dest.dir = file.path(ejd.repbox.dir,art$journ,art$id)
   if (dir.exists(dest.dir)) {
@@ -85,23 +85,23 @@ make.all.ejd.html = function(project.dirs=NULL, overwrite=FALSE) {
   project.dirs = get.ejd.projects(project.dirs)
   projects = ""
 
-  project.dir = project.dirs[1]
+  project_dir = project.dirs[1]
   project.dirs = project.dirs[114:258]
-  for (project.dir in project.dirs) {
-    exists = dir.exists(file.path(project.dir,"repbox","www_ejd"))
+  for (project_dir in project.dirs) {
+    exists = dir.exists(file.path(project_dir,"repbox","www_ejd"))
     if (!exists | overwrite) {
-      cat(paste0("\n\nCreate ejd html for ", project.dir))
-      try(repbox.ejd.html(project.dir))
-      projects= c(projects, basename(project.dir))
+      cat(paste0("\n\nCreate ejd html for ", project_dir))
+      try(repbox.ejd.html(project_dir))
+      projects= c(projects, basename(project_dir))
     } else {
-      exists = file.exists(file.path(project.dir,"repbox","www_ejd","repbox.css"))
+      exists = file.exists(file.path(project_dir,"repbox","www_ejd","repbox.css"))
       if (!exists) {
         res.dir = system.file("www",package="repboxMain")
-        copy.dir(file.path(res.dir,"shared"), file.path(project.dir,"repbox","www_ejd","shared") )
-        file.copy(file.path(res.dir,"do_bottom.js"), file.path(project.dir,"repbox","www_ejd"))
-        file.copy(file.path(res.dir,"repbox.css"), file.path(project.dir,"repbox","www_ejd"))
+        copy.dir(file.path(res.dir,"shared"), file.path(project_dir,"repbox","www_ejd","shared") )
+        file.copy(file.path(res.dir,"do_bottom.js"), file.path(project_dir,"repbox","www_ejd"))
+        file.copy(file.path(res.dir,"repbox.css"), file.path(project_dir,"repbox","www_ejd"))
 
-        projects= c(projects, basename(project.dir))
+        projects= c(projects, basename(project_dir))
 
       }
     }
@@ -110,12 +110,12 @@ make.all.ejd.html = function(project.dirs=NULL, overwrite=FALSE) {
   projects
 }
 
-repbox.ejd.html = function(project.dir,  su = readRDS.or.null(paste0(project.dir,"/repbox/stata/repbox_results.Rds"))) {
+repbox.ejd.html = function(project_dir,  su = readRDS.or.null(paste0(project_dir,"/repbox/stata/repbox_results.Rds"))) {
   restore.point("repbox.ejd.html")
 
-  ejd.art.file = file.path(project.dir,"meta","ejd_art.Rds")
+  ejd.art.file = file.path(project_dir,"meta","ejd_art.Rds")
   if (!file.exists(ejd.art.file)) {
-    cat(paste0("\nCannot make EJD HTML for ", project.dir, " since ejd_art.Rds does not exist. Probably not a valid EJD project.\n"))
+    cat(paste0("\nCannot make EJD HTML for ", project_dir, " since ejd_art.Rds does not exist. Probably not a valid EJD project.\n"))
     return(invisible())
   }
   art = readRDS(ejd.art.file)
@@ -126,18 +126,18 @@ repbox.ejd.html = function(project.dir,  su = readRDS.or.null(paste0(project.dir
 
   prefix = paste0("")
   options(repbox.url.prefix = prefix)
-  www.dir = paste0(project.dir,"/repbox/www")
+  www.dir = paste0(project_dir,"/repbox/www")
 
   head = repbox.www.head("")
 
-  project = basename(project.dir)
+  project = basename(project_dir)
   time = paste0(Sys.time(), " (UTC)")
 
 
 
   report.frag = readLines(system.file("fragments/ejd.html", package="repboxMain")) %>% merge.lines()
 
-  res = report.do.html(project.dir, su, ma=NULL,link.with.tabs = FALSE, return.do.df = TRUE)
+  res = report.do.html(project_dir, su, ma=NULL,link.with.tabs = FALSE, return.do.df = TRUE)
   do.summary.html = res$html
   do.info = res$do.df
   if (NROW(do.info)>0) {
@@ -149,7 +149,7 @@ repbox.ejd.html = function(project.dir,  su = readRDS.or.null(paste0(project.dir
   }
 
 
-  data.info = datasets.info.html(project.dir)
+  data.info = datasets.info.html(project_dir)
   data.sets.html = data.info$html
 
   if (any(is.true(su$dotab$timeout))) {
@@ -193,32 +193,32 @@ repbox.ejd.html = function(project.dir,  su = readRDS.or.null(paste0(project.dir
 
   # overview
   body = as.character(fluidPage(HTML(content.html)))
-  html = paste0("<html><title>Report for ",basename(project.dir),"</title>\n",head,"<style> p {max-width: 60em;}</style><body>",body, "</body></html>")
-  if (!dir.exists(paste0(project.dir,"/repbox/www_ejd")))
-      dir.create(paste0(project.dir,"/repbox/www_ejd"))
+  html = paste0("<html><title>Report for ",basename(project_dir),"</title>\n",head,"<style> p {max-width: 60em;}</style><body>",body, "</body></html>")
+  if (!dir.exists(paste0(project_dir,"/repbox/www_ejd")))
+      dir.create(paste0(project_dir,"/repbox/www_ejd"))
 
 
-  writeLines(html,paste0(project.dir,"/repbox/www_ejd/index.html"))
+  writeLines(html,paste0(project_dir,"/repbox/www_ejd/index.html"))
 
 
   res.dir = system.file("www",package="repboxMain")
 
-  copy.dir(file.path(res.dir,"shared"), file.path(project.dir,"repbox","www_ejd","shared") )
-  try(copy.dir(file.path(project.dir,"repbox","www","images"), file.path(project.dir,"repbox","www_ejd","images")))
-  #file.copy(file.path(project.dir,"repbox","www","do.html"), file.path(project.dir,"repbox","www_ejd"))
+  copy.dir(file.path(res.dir,"shared"), file.path(project_dir,"repbox","www_ejd","shared") )
+  try(copy.dir(file.path(project_dir,"repbox","www","images"), file.path(project_dir,"repbox","www_ejd","images")))
+  #file.copy(file.path(project_dir,"repbox","www","do.html"), file.path(project_dir,"repbox","www_ejd"))
 
-  file.copy(file.path(res.dir,"do_bottom.js"), file.path(project.dir,"repbox","www_ejd"))
-  file.copy(file.path(res.dir,"repbox.css"), file.path(project.dir,"repbox","www_ejd"))
+  file.copy(file.path(res.dir,"do_bottom.js"), file.path(project_dir,"repbox","www_ejd"))
+  file.copy(file.path(res.dir,"repbox.css"), file.path(project_dir,"repbox","www_ejd"))
 
-  do.tabs.html = HTML(project.do.tabs.html(project.dir,ma = NULL, su=su,add.match.info=FALSE,title.html = paste0('<h3>Do files for "',art$title,'"</h3>')))
+  do.tabs.html = HTML(project.do.tabs.html(project_dir,ma = NULL, su=su,add.match.info=FALSE,title.html = paste0('<h3>Do files for "',art$title,'"</h3>')))
 
   ui = fluidPage(
     do.tabs.html,
     tags$script(src="do_bottom.js")
   )
   body = as.character(ui) %>% merge.lines()
-  html = paste0("<html><title>Do files ",basename(project.dir),"</title>\n",head,"<body>",body, "</body></html>")
-  writeLines(html, file.path(project.dir,"repbox","www_ejd","do.html"))
+  html = paste0("<html><title>Do files ",basename(project_dir),"</title>\n",head,"<body>",body, "</body></html>")
+  writeLines(html, file.path(project_dir,"repbox","www_ejd","do.html"))
 
   invisible(html)
 }

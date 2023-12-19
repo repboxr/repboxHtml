@@ -1,23 +1,23 @@
 example = function() {
   library(repboxHtml)
-  project.dir = "~/repbox/projects_reg/testr"
-  project.dir = "C:/libraries/repbox/projects_reg/testr"
-  html = html_all_r(project.dir)
-  html.dir = file.path(project.dir,"reports")
+  project_dir = "~/repbox/projects_reg/testr"
+  project_dir = "C:/libraries/repbox/projects_reg/testr"
+  html = html_all_r(project_dir)
+  html.dir = file.path(project_dir,"reports")
   repbox_save_html(html %>% repbox_add_html_header(), "r_code.html", html.dir)
 
 
   rstudioapi::filesPaneNavigate(html.dir)
-  rstudioapi::filesPaneNavigate(project.dir)
+  rstudioapi::filesPaneNavigate(project_dir)
   rstudioapi::filesPaneNavigate("~/repbox/repboxHtml/R")
 }
 
 
 
-html_all_r = function(project.dir, parcels=NULL, opts = repbox_html_opts()) {
+html_all_r = function(project_dir, parcels=NULL, opts = repbox_html_opts()) {
   restore.point("html_all_r")
 
-  parcels = regdb_load_parcels(project.dir, c("r_source","r_chunk","r_chunk_out"),parcels = parcels)
+  parcels = regdb_load_parcels(project_dir, c("r_source","r_chunk","r_chunk_out"),parcels = parcels)
 
   # script_source is script_file info + source text
   script_df = parcels$r_source$script_source
@@ -36,7 +36,7 @@ html_all_r = function(project.dir, parcels=NULL, opts = repbox_html_opts()) {
   line_out_df = r_make_out_lines_html(out_df, opts=opts)
 
 
-  project = basename(project.dir)
+  project = basename(project_dir)
   outer.tabids = paste0("rtab_", script_df$script_num)
 
   contents = lapply(seq_len(NROW(script_df)), function(i) {
@@ -61,7 +61,7 @@ r_make_out_lines_html = function(out_df,opts) {
   }
 
   # include images, possibly img_inline with bas64 encoding
-  img.dir = paste0(project.dir, "/repbox/r/figure")
+  img.dir = paste0(project_dir, "/repbox/r/figure")
   out_df$img.src = ""
   rows = which(out_df$img_file!="")
   if (length(rows)>0) {

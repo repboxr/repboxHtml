@@ -1,8 +1,8 @@
 example = function() {
   library(repboxHtml)
-  project.dir = "~/repbox/projects_reg/aejapp_3_2_2"
-  html = html_all_do(project.dir)
-  html.dir = file.path(project.dir,"reports")
+  project_dir = "~/repbox/projects_reg/aejapp_3_2_2"
+  html = html_all_do(project_dir)
+  html.dir = file.path(project_dir,"reports")
   repbox_save_html(html %>% repbox_add_html_header(), "do.html", html.dir)
 
 
@@ -12,10 +12,10 @@ example = function() {
 
 
 
-html_all_do = function(project.dir, parcels=NULL, opts = repbox_html_opts()) {
+html_all_do = function(project_dir, parcels=NULL, opts = repbox_html_opts()) {
   restore.point("html_all_do")
 
-  parcels = regdb_load_parcels(project.dir, c("stata_source","stata_run_cmd","stata_run_log","stata_cmd", if (opts$add_debug_info) "base_core"))
+  parcels = regdb_load_parcels(project_dir, c("stata_source","stata_run_cmd","stata_run_log","stata_cmd", if (opts$add_debug_info) "base_core"))
 
   # script_source is script_file info + source text
   script_df = parcels$stata_source$script_source
@@ -24,17 +24,17 @@ html_all_do = function(project.dir, parcels=NULL, opts = repbox_html_opts()) {
     return("<p>The supplement has no do files</p>")
   }
 
-  run_df = load_full_run_df(project.dir, parcels)
-  cmd_df = load_full_cmd_df(project.dir, parcels)
+  run_df = load_full_run_df(project_dir, parcels)
+  cmd_df = load_full_cmd_df(project_dir, parcels)
 
   # We may ignore some runs
   # if do file or a line has too many runs
   # This could blow up websites massively otherwise
   run_df = adapt_too_big_run_df(run_df,opts)
 
-  log_info_html = log_info_html(run_df,opts=opts, project.dir=project.dir)
+  log_info_html = log_info_html(run_df,opts=opts, project_dir=project_dir)
 
-  project = basename(project.dir)
+  project = basename(project_dir)
 
   outer.tabids = paste0("dotab_", script_df$script_num)
 
@@ -161,7 +161,7 @@ do_code_html = function(script_num, file_path, do_txt, log_info_html, run_df, cm
 
   if (opts$add_do_mapping)  {
     new_parcels = c("map_cell","stata_run_cmd", "art_tab")
-    parcels = regdb_load_parcels(project.dir, new_parcels, parcels)
+    parcels = regdb_load_parcels(project_dir, new_parcels, parcels)
     do.map = !is.null(parcels$map_cell$map_cell)
   } else {
     do.map = FALSE
@@ -232,14 +232,14 @@ adapt_too_big_run_df = function(run_df, opts) {
   run_df
 }
 
-log_info_html = function(run_df, project.dir,opts) {
+log_info_html = function(run_df, project_dir,opts) {
   restore.point("log_info_html")
   i = 1
   n = NROW(run_df)
   if (n==0) return(list())
 
   # include images, possibly img_inline with bas64 encoding
-  img.dir = paste0(project.dir, "/repbox/www/images")
+  img.dir = paste0(project_dir, "/repbox/www/images")
   run_df$img.src = ""
   rows = which(run_df$out_img_file != "")
   if (length(rows)>0) {

@@ -1,16 +1,16 @@
 example = function() {
   library(repboxMain)
-  project.dir = "~/repbox/projects2/testsupp"
-  rstudioapi::filesPaneNavigate(paste0(project.dir,"/repbox"))
+  project_dir = "~/repbox/projects2/testsupp"
+  rstudioapi::filesPaneNavigate(paste0(project_dir,"/repbox"))
 
 }
 
 
-datasets.info.html = function(project.dir) {
+datasets.info.html = function(project_dir) {
   restore.point("datasets.info.html")
-  fi = readRDS.or.null(file.path(project.dir,"repbox/data_file_info.Rds"))
+  fi = readRDS.or.null(file.path(project_dir,"repbox/data_file_info.Rds"))
 
-  res = readRDS.or.null(file.path(project.dir,"repbox/stata/do_data_use.Rds"))
+  res = readRDS.or.null(file.path(project_dir,"repbox/stata/do_data_use.Rds"))
   do_data_load = res$do_data_load
   do_data_save = res$do_data_save
 

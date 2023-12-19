@@ -1,4 +1,4 @@
-make.data.code.network.html = function(project.dir,www.dir, ma = readRDS.or.null(paste0(project.dir,"/repbox/matched_tabs.Rds")),su = readRDS.or.null(paste0(project.dir,"/repbox/stata/repbox_results.Rds")), do.max.runs=10000, line.max.runs=50) {
+make.data.code.network.html = function(project_dir,www.dir, ma = readRDS.or.null(paste0(project_dir,"/repbox/matched_tabs.Rds")),su = readRDS.or.null(paste0(project_dir,"/repbox/stata/repbox_results.Rds")), do.max.runs=10000, line.max.runs=50) {
   restore.point("make.data.code.network.html")
 
   tab = su$tab
@@ -48,7 +48,7 @@ make.data.code.network.html = function(project.dir,www.dir, ma = readRDS.or.null
   # Look at existing files in the project
   # Some might be there but never called in a
   # Stata do file
-  sup.dir = file.path(project.dir, "mod")
+  sup.dir = file.path(project_dir, "mod")
   exist.file = list.project.data.files(sup.dir)
   exist.base = basename(exist.file)
   new = which(!exist.base %in% mn$dta.base)
@@ -110,7 +110,7 @@ make.data.code.network.html = function(project.dir,www.dir, ma = readRDS.or.null
   edges = bind_rows(make.edges, need.edges) %>%
     select(from, to, arrows)
 
-  project = basename(project.dir)
+  project = basename(project_dir)
   title = paste0("Data-Code Network for ", project)
   vis = visNetwork(nodes, edges,
     main = list(text=title,style="font-family: Helvetia, sans-serif;font-weight:bold;font-size:20px; text-align: center;"),

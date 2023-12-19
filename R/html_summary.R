@@ -18,7 +18,7 @@ summary.html = function(agg.df) {
   url.prefix = getOption("repbox.url.prefix")
   agg.df = agg.df %>%
     mutate(
-      project.link = paste0(url.prefix, basename(project.dir),"/repbox/www/overview.html"),
+      project.link = paste0(url.prefix, basename(project_dir),"/repbox/www/overview.html"),
       project.a = paste0('<a href="', project.link,'">',project,"<a>")
     )
 
