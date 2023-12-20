@@ -81,7 +81,7 @@ r_make_out_lines_html = function(out_df,opts) {
         is_html ~ out_text,
         img.src != "" ~ paste0("<img src='",img.src,"' style='max-width: 100%'>\n"),
         is.na(out_text) | is.true(out_text=="") ~ "",
-        TRUE ~ paste0("<pre>", out_text, "</pre>")
+        TRUE ~ paste0("<pre>", htmlEscape(out_text), "</pre>")
       )
     )
 
@@ -106,6 +106,7 @@ r_make_out_lines_html = function(out_df,opts) {
 r_code_html = function(script_num, file_path, code, line_out_df,out_df, opts, parcels) {
   restore.point("r_code_html")
 
+  #stop()
   line_out_df = line_out_df[line_out_df$script_num == script_num,]
   out_df = out_df[out_df$script_num == script_num,] %>%
     rename(line = line2)
