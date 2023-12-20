@@ -17,7 +17,7 @@ example = function() {
 html_all_r = function(project_dir, parcels=NULL, opts = repbox_html_opts()) {
   restore.point("html_all_r")
 
-  parcels = regdb_load_parcels(project_dir, c("r_source","r_chunk","r_chunk_out"),parcels = parcels)
+  parcels = repdb_load_parcels(project_dir, c("r_source","r_chunk","r_chunk_out"),parcels = parcels)
 
   # script_source is script_file info + source text
   script_df = parcels$r_source$script_source
@@ -27,10 +27,10 @@ html_all_r = function(project_dir, parcels=NULL, opts = repbox_html_opts()) {
   }
 
   chunk_df = parcels$r_chunk$r_chunk %>%
-    regdb_null_to_empty("r_chunk")
+    repdb_null_to_empty("r_chunk")
 
   out_df = parcels$r_chunk_out$r_chunk_out %>%
-    regdb_null_to_empty("r_chunk_out") %>%
+    repdb_null_to_empty("r_chunk_out") %>%
     left_join(select(chunk_df, chunkid,  line2), by="chunkid")
 
   line_out_df = r_make_out_lines_html(out_df, opts=opts)

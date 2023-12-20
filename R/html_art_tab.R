@@ -12,11 +12,11 @@ example = function() {
 html_art_tabs = function(project_dir, parcels=NULL, opts = repbox_html_opts(add_mapping=add_mapping), add_mapping=TRUE) {
   restore.point("html_art_tabs")
 
-  parcels = regdb_load_parcels(project_dir, c("art_tab","art_tab_cell"), parcels)
+  parcels = repdb_load_parcels(project_dir, c("art_tab","art_tab_cell"), parcels)
 
   tab_df = parcels$art_tab$art_tab
   if (is.null(tab_df)) {
-    parcels = regdb_load_parcels(project_dir,"art")
+    parcels = repdb_load_parcels(project_dir,"art")
     art = parcels$art$art[1,]
     return(paste0('<h5>No tables detected in the article "', art$title,'" <a href="', art$pdf_url,'" target="_blank">🡥</a></h5>'))
   }
@@ -28,7 +28,7 @@ html_art_tabs = function(project_dir, parcels=NULL, opts = repbox_html_opts(add_
 
   if (opts$add_mapping) {
     new_parcels = c(new_parcels, "map_cell", if (opts$add_tab_report) c("stata_cmd_tab_fig_ref","stata_run_cmd"))
-    parcels = regdb_load_parcels(project_dir, new_parcels, parcels)
+    parcels = repdb_load_parcels(project_dir, new_parcels, parcels)
     map_df = parcels$map_cell$map_cell
     add_mapping = !is.null(map_df)
   } else {
@@ -37,7 +37,7 @@ html_art_tabs = function(project_dir, parcels=NULL, opts = repbox_html_opts(add_
 
   if (add_mapping) {
     new_parcels = c(new_parcels, "map_cell", if (opts$add_tab_report) c("stata_cmd_tab_fig_ref","stata_run_cmd"))
-    parcels = regdb_load_parcels(project_dir, new_parcels, parcels)
+    parcels = repdb_load_parcels(project_dir, new_parcels, parcels)
     map_df = parcels$map_cell$map_cell
 
     cell_df = cell_df %>% left_join(select(map_df, cellid, block, regid, num_type,match_type, runid, variant, block, cmd), by=c("cellid"))
@@ -197,7 +197,7 @@ html_tab_report = function(tab, cell_df, parcels) {
 
   .tabid = tab$tabid
   cmd_ref = parcels$stata_cmd_tab_fig_ref$stata_cmd_tab_fig_ref %>%
-    regdb_null_to_empty("stata_cmd_tab_fig_ref") %>%
+    repdb_null_to_empty("stata_cmd_tab_fig_ref") %>%
     mutate(is_cur_tab = ref_type=="tab" & ref_id==.tabid)
 
   cur_ref = filter(cmd_ref,is_cur_tab) %>%

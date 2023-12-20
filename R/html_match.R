@@ -9,7 +9,7 @@
 # 2. Otherwise map remaining cells by most command command in the column
 cell_df_find_best_match_chunks = function(cell_df, parcels) {
   restore.point("find_best_match_chunks")
-  parcels = regdb_load_parcels(project_dir, c("html","art_reg"), parcels)
+  parcels = repdb_load_parcels(project_dir, c("html","art_reg"), parcels)
 
   cell_df$cellid = seq_len(NROW(cell_df))
 

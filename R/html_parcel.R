@@ -14,7 +14,7 @@ example = function() {
 
 html_make_parcels = function(project_dir, parcels = list()) {
   restore.point("html_make_parcels")
-  regdb_load_specs(libs="repboxHtml")
+  repdb_load_specs(libs="repboxHtml")
 
   parcels$html = list()
   # creates html_do_chunk, html_cmd and html_regcmd
@@ -40,14 +40,14 @@ html_make_parcels = function(project_dir, parcels = list()) {
 
 
 
-  dir = file.path(project_dir,"reports","regdb")
+  dir = file.path(project_dir,"reports","repdb")
   if (!dir.exists(dir)) dir.create(dir)
-  regdb_save_parcels(parcels["html"],dir)
+  repdb_save_parcels(parcels["html"],dir)
   parcels
 }
 
 html_parcel_reg_stat_map = function(project_dir, parcels=list()) {
-  parcels = regdb_load_parcels(project_dir, c("html_do_chunk", "map_reg", "map_regstat", "art_reg"), parcels)
+  parcels = repdb_load_parcels(project_dir, c("html_do_chunk", "map_reg", "map_regstat", "art_reg"), parcels)
 
   # html_do_stat_num
   stat_df = parcels$art_reg$art_regstat
@@ -64,7 +64,7 @@ html_parcel_reg_stat_map = function(project_dir, parcels=list()) {
       )
     )
 
-  regdb_check_data(map_df, "html_reg_stat_map")
+  repdb_check_data(map_df, "html_reg_stat_map")
   parcels$html$html_reg_stat_map = map_df
   parcels
 }
@@ -72,7 +72,7 @@ html_parcel_reg_stat_map = function(project_dir, parcels=list()) {
 #
 html_parcel_reg_num = function(project_dir, parcels=list()) {
   restore.point("html_parcel_reg_num")
-  parcels = regdb_load_parcels(project_dir, c("html_do_chunk", "map_reg", "map_regstat", "base_core","base_regcoef", "art_reg"), parcels)
+  parcels = repdb_load_parcels(project_dir, c("html_do_chunk", "map_reg", "map_regstat", "base_core","base_regcoef", "art_reg"), parcels)
 
   chunk_df = parcels$html$html_do_chunk
 
@@ -120,7 +120,7 @@ html_parcel_reg_num = function(project_dir, parcels=list()) {
 
 html_parcel_tab_num_cell = function(project_dir, parcels=list()) {
   restore.point("html_parcel_tab_num_cell")
-  parcels = regdb_load_parcels(project_dir, c("art_tab_cell","art_tab","art_reg","html"), parcels)
+  parcels = repdb_load_parcels(project_dir, c("art_tab_cell","art_tab","art_reg","html"), parcels)
 
   tab_df = parcels$art_tab$art_tab
   reg_df = parcels$art_reg$art_reg
@@ -174,7 +174,7 @@ html_parcel_tab_num_cell = function(project_dir, parcels=list()) {
 
   cell_df = cell_df_find_best_match_chunks(cell_df, parcels)
 
-  regdb_check_data(cell_df, "html_tab_num_cell")
+  repdb_check_data(cell_df, "html_tab_num_cell")
   parcels$html$html_tab_num_cell = cell_df
   parcels
 }
@@ -183,7 +183,7 @@ html_parcel_tab_num_cell = function(project_dir, parcels=list()) {
 
 html_parcel_do_num = function(project_dir, parcels=list()) {
   restore.point("html_parcel_do_num")
-  parcels = regdb_load_parcels(project_dir, c("stata_log_num"), parcels)
+  parcels = repdb_load_parcels(project_dir, c("stata_log_num"), parcels)
 
   chunk_df = parcels$html$html_do_chunk
 
@@ -199,7 +199,7 @@ html_parcel_do_num = function(project_dir, parcels=list()) {
 
 
 
-  regdb_check_data(num_df, "html_do_num")
+  repdb_check_data(num_df, "html_do_num")
   parcels$html$html_do_num = num_df
   parcels
 }
@@ -207,7 +207,7 @@ html_parcel_do_num = function(project_dir, parcels=list()) {
 
 html_parcel_reg_map = function(project_dir, parcels=list()) {
   restore.point("html_parcel_reg_map")
-  parcels = regdb_load_parcels(project_dir, c("map_reg"), parcels)
+  parcels = repdb_load_parcels(project_dir, c("map_reg"), parcels)
 
   chunk_df = parcels$html$html_do_chunk
 
@@ -220,7 +220,7 @@ html_parcel_reg_map = function(project_dir, parcels=list()) {
     left_join(select(chunk_df, step, runid, chunkid), by="step") %>%
     mutate(paren_num_type = paren_type_to_paren_num_type(paren_type))
 
-  regdb_check_data(map_df, "html_reg_map")
+  repdb_check_data(map_df, "html_reg_map")
 
   parcels$html$html_reg_map = map_df
   parcels
@@ -234,7 +234,7 @@ paren_type_to_paren_num_type = function(paren_type) {
 
 html_parcel_do_chunk = function(project_dir, parcels=NULL) {
   restore.point("html_parcel_do_chunk")
-  parcels = regdb_load_parcels(project_dir, c("stata_run_cmd","stata_cmd","stata_file","base_core"), parcels)
+  parcels = repdb_load_parcels(project_dir, c("stata_run_cmd","stata_cmd","stata_file","base_core"), parcels)
 
   ignore_cmds = repboxMap::ignore_log_stata_commands()
 
@@ -289,9 +289,9 @@ html_parcel_do_chunk = function(project_dir, parcels=NULL) {
 
 
 
-  regdb_check_data(chunk_df,"html_do_chunk")
-  regdb_check_data(html_regcmd,"html_regcmd")
-  regdb_check_data(html_cmd,"html_cmd")
+  repdb_check_data(chunk_df,"html_do_chunk")
+  repdb_check_data(html_regcmd,"html_regcmd")
+  repdb_check_data(html_cmd,"html_cmd")
 
   parcels
 
@@ -299,7 +299,7 @@ html_parcel_do_chunk = function(project_dir, parcels=NULL) {
 
 html_parcel_do_regout = function(project_dir, parcels=NULL) {
   restore.point("html_make_regout")
-  parcels = regdb_load_parcels(project_dir, c("base_core","base_regcoef"), parcels)
+  parcels = repdb_load_parcels(project_dir, c("base_core","base_regcoef"), parcels)
   reg_df = parcels$base_core$reg
   coef_df = parcels$base_regcoef$regcoef
 
@@ -335,7 +335,7 @@ html_parcel_do_regout = function(project_dir, parcels=NULL) {
   out_df = left_join(out_df, select(reg_df,runid, step), by="step") %>%
     left_join(select(chunk_df, runid, chunkid), by="runid")
 
-  regdb_check_data(out_df, "html_regout")
+  repdb_check_data(out_df, "html_regout")
 
   parcels$html$html_regout = out_df
 

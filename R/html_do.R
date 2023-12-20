@@ -15,7 +15,7 @@ example = function() {
 html_all_do = function(project_dir, parcels=NULL, opts = repbox_html_opts()) {
   restore.point("html_all_do")
 
-  parcels = regdb_load_parcels(project_dir, c("stata_source","stata_run_cmd","stata_run_log","stata_cmd", if (opts$add_debug_info) "base_core"))
+  parcels = repdb_load_parcels(project_dir, c("stata_source","stata_run_cmd","stata_run_log","stata_cmd", if (opts$add_debug_info) "base_core"))
 
   # script_source is script_file info + source text
   script_df = parcels$stata_source$script_source
@@ -104,9 +104,9 @@ do_code_html = function(script_num, file_path, do_txt, log_info_html, run_df, cm
 
   if (opts$add_debug_info) {
     reg_df = parcels$base_core$reg %>%
-      regdb_null_to_empty("reg")
+      repdb_null_to_empty("reg")
     reg_check = parcels$base_core$regcheck %>%
-      regdb_null_to_empty("regcheck")
+      repdb_null_to_empty("regcheck")
     run_df = re %>% left_join(select(reg_df, runid, step), by="runid") %>%
       left_join(select(reg_check, step, reg_did_run=did_run, reg_problem=problem, reg_deviation = deviation), by="step") %>%
       mutate(
@@ -161,7 +161,7 @@ do_code_html = function(script_num, file_path, do_txt, log_info_html, run_df, cm
 
   if (opts$add_do_mapping)  {
     new_parcels = c("map_cell","stata_run_cmd", "art_tab")
-    parcels = regdb_load_parcels(project_dir, new_parcels, parcels)
+    parcels = repdb_load_parcels(project_dir, new_parcels, parcels)
     do.map = !is.null(parcels$map_cell$map_cell)
   } else {
     do.map = FALSE
