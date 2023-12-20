@@ -26,9 +26,9 @@ html_all_r = function(project_dir, parcels=NULL, opts = repbox_html_opts()) {
     return("<p>The supplement has no R files</p>")
   }
 
-
   chunk_df = parcels$r_chunk$r_chunk %>%
     regdb_null_to_empty("r_chunk")
+
   out_df = parcels$r_chunk_out$r_chunk_out %>%
     regdb_null_to_empty("r_chunk_out") %>%
     left_join(select(chunk_df, chunkid,  line2), by="chunkid")
@@ -99,8 +99,6 @@ r_make_out_lines_html = function(out_df,opts) {
     rename(line = line2)
   line_out_df
 }
-
-
 
 # In this version I try not to directly add matching information.
 # Instead general class info shall facilitate

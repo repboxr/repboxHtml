@@ -160,7 +160,7 @@ repbox.ejd.html = function(project_dir,  su = readRDS.or.null(paste0(project_dir
     has_timeout = "No"
   }
 
-  if (!is.empty(art$readme_file)) {
+  if (!is_empty(art$readme_file)) {
     readme_a = paste0('<a target = "_blank" href="',art$readme_file,'">Readme</a>')
     readme_li = paste0('<li><a target = "_blank" href="',art$readme_file,'">Readme</a></li>')
   } else {
