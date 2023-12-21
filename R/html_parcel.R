@@ -40,7 +40,7 @@ html_make_parcels = function(project_dir, parcels = list()) {
 
 
 
-  dir = file.path(project_dir,"reports","repdb")
+  dir = file.path(project_dir,"repdb")
   if (!dir.exists(dir)) dir.create(dir)
   repdb_save_parcels(parcels["html"],dir)
   parcels
