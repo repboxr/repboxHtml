@@ -33,7 +33,7 @@ html_all_r = function(project_dir, parcels=NULL, opts = repbox_html_opts()) {
     repdb_null_to_empty("r_chunk_out") %>%
     left_join(select(chunk_df, chunkid,  line2), by="chunkid")
 
-  line_out_df = r_make_out_lines_html(out_df, opts=opts)
+  line_out_df = r_make_out_lines_html(project_dir, out_df, opts=opts)
 
 
   project = basename(project_dir)
@@ -54,7 +54,7 @@ html_all_r = function(project_dir, parcels=NULL, opts = repbox_html_opts()) {
 }
 
 
-r_make_out_lines_html = function(out_df,opts) {
+r_make_out_lines_html = function(project_dir, out_df,opts) {
   restore.point("r_make_out_lines_html")
   if (NROW(out_df)==0) {
     return(NULL)
