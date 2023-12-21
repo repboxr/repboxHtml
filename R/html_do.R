@@ -43,7 +43,7 @@ html_all_do = function(project_dir, parcels=NULL, opts = repbox_html_opts()) {
     script_num = script_df$script_num[[i]]
     otabid = outer.tabids[i]
     do_txt = script_df$text[i]
-    do.html = do_code_html(script_num=script_num,file_path = script_df$file_path[[i]], do_txt=do_txt,   run_df=run_df, cmd_df = cmd_df, log_info_html=log_info_html, opts=opts, parcels=parcels)
+    do.html = do_code_html(project_dir, script_num=script_num,file_path = script_df$file_path[[i]], do_txt=do_txt,   run_df=run_df, cmd_df = cmd_df, log_info_html=log_info_html, opts=opts, parcels=parcels)
     return(do.html)
 
     html = repboxTabSetPanel(id=paste0("innertabset_",otabid), tabnames =c("Code","Comparison"),tabids = paste0(c("codetab_","comparetab_"),otabid),contents = do.html)
@@ -60,7 +60,7 @@ html_all_do = function(project_dir, parcels=NULL, opts = repbox_html_opts()) {
 # In this version I try not to directly add matching information.
 # Instead general class info shall facilitate
 # color-coded mapping
-do_code_html = function(script_num, file_path, do_txt, log_info_html, run_df, cmd_df, opts, parcels) {
+do_code_html = function(project_dir, script_num, file_path, do_txt, log_info_html, run_df, cmd_df, opts, parcels) {
   restore.point("do_code_html")
 
   do_txt = sep.lines(do_txt)

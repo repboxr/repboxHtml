@@ -44,7 +44,7 @@ html_all_r = function(project_dir, parcels=NULL, opts = repbox_html_opts()) {
     script_num = script_df$script_num[[i]]
     otabid = outer.tabids[i]
     code = script_df$text[i]
-    r_html = r_code_html(script_num=script_num,file_path = script_df$file_path[[i]], code=code,line_out_df, out_df, opts=opts, parcels=parcels)
+    r_html = r_code_html(project_dir, script_num=script_num,file_path = script_df$file_path[[i]], code=code,line_out_df, out_df, opts=opts, parcels=parcels)
     return(r_html)
   })
 
@@ -103,7 +103,7 @@ r_make_out_lines_html = function(out_df,opts) {
 # In this version I try not to directly add matching information.
 # Instead general class info shall facilitate
 # color-coded mapping
-r_code_html = function(script_num, file_path, code, line_out_df,out_df, opts, parcels) {
+r_code_html = function(project_dir, script_num, file_path, code, line_out_df,out_df, opts, parcels) {
   restore.point("r_code_html")
 
   #stop()
