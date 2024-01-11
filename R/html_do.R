@@ -124,7 +124,7 @@ do_code_html = function(project_dir, script_num, file_path, do_txt, log_info_htm
         paste0("runid: ",runid, " step: ", step, debug_problem_txt, collapse="\n"),
         paste0("runid: ", paste0(runid, collapse=", "))
       ),
-      has_reg_problem = !is.na(reg_problem) & reg_problem != ""
+      has_reg_problem = any(!is.na(reg_problem) & reg_problem != "")
     )
     ldf = left_join(ldf, line_debug_txt, by="orgline")
     ldf$debug_title = paste0(' title="', ldf$debug_txt,'"')
