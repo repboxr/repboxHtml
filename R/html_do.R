@@ -15,7 +15,7 @@ example = function() {
 html_all_do = function(project_dir, parcels=NULL, opts = repbox_html_opts()) {
   restore.point("html_all_do")
 
-  parcels = repdb_load_parcels(project_dir, c("stata_source","stata_run_cmd","stata_run_log","stata_cmd", if (opts$add_debug_info) "base_core"))
+  parcels = repdb_load_parcels(project_dir, c("stata_source","stata_run_cmd","stata_run_log","stata_cmd", if (opts$add_debug_info) "reg_core"))
 
   # script_source is script_file info + source text
   script_df = parcels$stata_source$script_source
@@ -103,9 +103,9 @@ do_code_html = function(project_dir, script_num, file_path, do_txt, log_info_htm
   ldf$infobox[rows] = log_info_html$log.info.div
 
   if (opts$add_debug_info) {
-    reg_df = parcels$base_core$reg %>%
+    reg_df = parcels$reg_core$reg %>%
       repdb_null_to_empty("reg")
-    reg_check = parcels$base_core$regcheck %>%
+    reg_check = parcels$reg_core$regcheck %>%
       repdb_null_to_empty("regcheck")
     run_df = re %>% left_join(select(reg_df, runid, step), by="runid") %>%
       left_join(select(reg_check, step, reg_did_run=did_run, reg_problem=problem, reg_deviation = deviation), by="step") %>%

@@ -72,14 +72,14 @@ html_parcel_reg_stat_map = function(project_dir, parcels=list()) {
 #
 html_parcel_reg_num = function(project_dir, parcels=list()) {
   restore.point("html_parcel_reg_num")
-  parcels = repdb_load_parcels(project_dir, c("html_do_chunk", "map_reg", "map_regstat", "base_core","base_regcoef", "art_reg"), parcels)
+  parcels = repdb_load_parcels(project_dir, c("html_do_chunk", "map_reg", "map_regstat", "reg_core","regcoef", "art_reg"), parcels)
 
   chunk_df = parcels$html$html_do_chunk
 
-  reg_df = parcels$base_core$reg
+  reg_df = parcels$reg_core$reg
   map_df = parcels$map_reg$map_reg
 
-  coef_df = parcels$base_regcoef$regcoef %>%
+  coef_df = parcels$regcoef$regcoef %>%
     left_join(select(chunk_df, step, chunkid), by="step")
 
   # html_do_coef_num
@@ -234,11 +234,11 @@ paren_type_to_paren_num_type = function(paren_type) {
 
 html_parcel_do_chunk = function(project_dir, parcels=NULL) {
   restore.point("html_parcel_do_chunk")
-  parcels = repdb_load_parcels(project_dir, c("stata_run_cmd","stata_cmd","stata_file","base_core"), parcels)
+  parcels = repdb_load_parcels(project_dir, c("stata_run_cmd","stata_cmd","stata_file","reg_core"), parcels)
 
   ignore_cmds = repboxMap::ignore_log_stata_commands()
 
-  reg_df = parcels$base_core$reg
+  reg_df = parcels$reg_core$reg
   cmd_df = parcels$stata_cmd$stata_cmd
   run_df = parcels$stata_run_cmd$stata_run_cmd
   script_df = parcels$stata_file$script_file
@@ -299,9 +299,9 @@ html_parcel_do_chunk = function(project_dir, parcels=NULL) {
 
 html_parcel_do_regout = function(project_dir, parcels=NULL) {
   restore.point("html_make_regout")
-  parcels = repdb_load_parcels(project_dir, c("base_core","base_regcoef"), parcels)
-  reg_df = parcels$base_core$reg
-  coef_df = parcels$base_regcoef$regcoef
+  parcels = repdb_load_parcels(project_dir, c("reg_core","regcoef"), parcels)
+  reg_df = parcels$reg_core$reg
+  coef_df = parcels$regcoef$regcoef
 
   chunk_df = parcels$html$html_do_chunk
 
