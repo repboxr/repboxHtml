@@ -1,5 +1,9 @@
 repbox_html_page = function(body, title="", header=repbox_html_header(), footer_scripts = "repbox_links.js" ) {
-  footer_code = paste0('<script src="', footer_scripts,'"></script>', collapse="\n")
+  if (length(footer_scripts)>0) {
+    footer_code = paste0('<script src="', footer_scripts,'"></script>', collapse="\n")
+  } else {
+    footer_code = ""
+  }
   paste0("<html><title>", title,"</title>\n", header,"\n<body>", merge.lines(body),footer_code,"</body>\n</html>")
 }
 

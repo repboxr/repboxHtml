@@ -1,5 +1,11 @@
-repbox_html_opts = function(standalone = FALSE, add_art_source_tab = FALSE,do_max_runs=8000,line_max_runs=25,log_max_char=50000,add_match_info=TRUE, img_inline=!standalone, unfold_do_log_btns = TRUE, show_first_err_msg = TRUE, add_org_tab_link = TRUE, add_mapping=TRUE, add_tab_report = TRUE, add_do_mapping = add_mapping, add_tab_indicators = TRUE, add_debug_info = TRUE) {
+repbox_html_opts_just_ejd = function(make_what="ejd",img_inline=FALSE, standalone=FALSE,...) {
+  repbox_html_opts(make_what = make_what,img_inline=img_inline, standalone=standalone, ...)
+}
+
+repbox_html_opts = function(make_what = c("ejd","general")[2],
+  standalone = FALSE, add_art_source_tab = FALSE,do_max_runs=8000,line_max_runs=25,log_max_char=50000,add_match_info=TRUE, img_inline=!standalone, unfold_do_log_btns = TRUE, show_first_err_msg = TRUE, add_org_tab_link = TRUE, add_mapping=TRUE, add_tab_report = TRUE, add_do_mapping = add_mapping, add_tab_indicators = TRUE, add_debug_info = TRUE) {
   list(
+    make_what = make_what,
     standalone = standalone,
     add_art_source_tab = add_art_source_tab,
     do_max_runs= do_max_runs,
@@ -16,5 +22,6 @@ repbox_html_opts = function(standalone = FALSE, add_art_source_tab = FALSE,do_ma
     add_tab_indicators = add_tab_indicators,
     add_debug_info = add_debug_info
   )
-
 }
+
+

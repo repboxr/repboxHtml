@@ -1,10 +1,10 @@
 
-do.line.link = function(donum, orgline=NULL, prefix=getOption("repbox.url.prefix"), link.with.tabs=TRUE) {
+do.line.link = function(script_num, orgline=NULL, prefix=getOption("repbox.url.prefix"), link_with_tabs=TRUE) {
   restore.point("do.line.link")
-  if (link.with.tabs) {
-    res = paste0(prefix, "do_and_tabs.html?do=",donum)
+  if (link_with_tabs) {
+    res = paste0(prefix, "do_and_tabs.html?do=",script_num)
   } else {
-    res = paste0(prefix, "do.html?do=",donum)
+    res = paste0(prefix, "do.html?do=",script_num)
   }
   if (!is.null(orgline)) {
     rows = !is.na(orgline)

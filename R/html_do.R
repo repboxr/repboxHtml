@@ -10,6 +10,16 @@ example = function() {
   rstudioapi::filesPaneNavigate("~/repbox/repboxHtml/R")
 }
 
+html_just_do = function(project_dir, parcels=NULL,opts = repbox_html_opts(add_mapping=FALSE)) {
+  do_html = html_all_do(project_dir, parcels, opts)
+  return(do_html)
+
+  ui = fluidPage(
+    do_html
+  )
+  html = as.character(ui) %>% merge.lines()
+  html
+}
 
 
 html_all_do = function(project_dir, parcels=NULL, opts = repbox_html_opts()) {

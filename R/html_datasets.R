@@ -5,35 +5,104 @@ example = function() {
 
 }
 
+data_set_extensions = function() {
+  c("dta","csv","rds","tsv","tab","xlx","xlsx")
+}
 
-datasets.info.html = function(project_dir) {
-  restore.point("datasets.info.html")
-  fi = readRDS.or.null(file.path(project_dir,"repbox/data_file_info.Rds"))
+make_parcel_data_file_info = function(project_dir, parcels=list()) {
+  restore.point("make_parcel_data_set_info")
+  parcels = repdb_load_parcels(project_dir, "file_info", parcels = parcels)
+  exts = data_set_extensions()
+
+  org_files = repboxRun::repbox_get_org_sup_files(project_dir) %>%
+    filter(tolower(file_type) %in% exts)
+  mod_files = parcels$file_info$file_info %>%
+    filter(tolower(file_type) %in% exts)
+
+  fi = bind_rows(
+    org_files,
+    mod_files
+  ) %>%
+    filter(!duplicated(file_path)) %>%
+    mutate(
+      exists_org = file_path %in% org_files$file_path,
+      exists_final = file_path %in% mod_files$file_path,
+      artid = basename(project_dir),
+      file_type = tolower(file_type)
+    )
+
+  parcels$data_file = list(data_file = fi)
+
+  repdb_save_parcels(parcels["data_file"], file.path(project_dir,"repdb"))
+
+  data_read = repdb_null_to_empty(NULL, "data_read")
+  data_write = repdb_null_to_empty(NULL, "data_write")
+  if (NROW(fi)==0) {
+    parcels$data_read = list(data_read = data_read)
+    parcels$data_write = list(data_write = data_write)
+    repdb_save_parcels(parcels[c("data_read","data_write")], file.path(project_dir,"repdb"))
+    return(parcels)
+  }
 
   res = readRDS.or.null(file.path(project_dir,"repbox/stata/do_data_use.Rds"))
   do_data_load = res$do_data_load
   do_data_save = res$do_data_save
 
-  data_load = do_data_load %>%
-    group_by(base) %>%
+  if (NROW(do_data_load)>0) {
+    old_cols = c("base","donum","from.parse","from.run","runs.noerr","runs.err")
+    new_cols = c("file_base","script_num","from_parse","from_run","times_read_ok","times_read_err")
+    data_read = rename.cols(do_data_load, old_cols, new_cols) %>%
+      mutate(
+        artid = basename(project_dir),
+        file_type = tolower(tools::file_ext(file_base))
+      )
+  }
+  if (NROW(do_data_save)>0) {
+    old_cols = c("base","donum","from.parse","from.run","runs.noerr","runs.err")
+    new_cols = c("file_base","script_num","from_parse","from_run","times_write_ok","times_write_err")
+    data_write = rename.cols(do_data_save, old_cols, new_cols) %>%
+      mutate(
+        artid = basename(project_dir),
+        file_type = tolower(tools::file_ext(file_base))
+      )
+  }
+
+
+  parcels$data_read = list(data_read = data_read)
+  parcels$data_write = list(data_write = data_write)
+  repdb_save_parcels(parcels[c("data_read","data_write")], file.path(project_dir,"repdb"))
+  return(parcels)
+}
+
+datasets_info_html = function(project_dir, parcels=list()) {
+  restore.point("datasets_info_html")
+
+  do_files = parcels$stata_file$script_file
+  data_file = parcels$data_file$data_file %>% mutate(file_base = basename(file_path))
+  data_read = parcels$data_read$data_read
+  data_write = parcels$data_write$data_write
+
+  data_load = data_read %>%
+    left_join(select(do_files, do_file = file_name, script_num), by="script_num") %>%
+    group_by(file_base) %>%
     summarize(
-      do_str = paste0(unique(paste0(doid,".do")), collapse=", "),
-      across(from.parse:runs.noerr, ~sum(.))
+      do_str = paste0(unique(do_file), collapse=", "),
+      across(from_parse:times_read_ok, ~sum(.))
     )
 
-  data_save = do_data_save %>%
-    group_by(base) %>%
+  data_save = data_write %>%
+    left_join(select(do_files, do_file = file_name, script_num), by="script_num") %>%
+    group_by(file_base) %>%
     summarize(
-      do_str = paste0(unique(paste0(doid,".do")), collapse=", "),
-      across(from.parse:runs.noerr, ~sum(.)),
+      do_str = paste0(unique(do_file), collapse=", "),
+      across(from_parse:times_write_ok, ~sum(.)),
       intermediate = TRUE
     )
 
   # Table for existing data sets
-
-  exist.df = fi %>%
-    left_join(select(data_load,base, loaded_by = do_str), by="base") %>%
-    left_join(select(data_save,base, saved_by = do_str), by="base") %>%
+  exist.df = data_file %>%
+    left_join(select(data_load,file_base, loaded_by = do_str), by="file_base") %>%
+    left_join(select(data_save,file_base, saved_by = do_str), by="file_base") %>%
     mutate(
       loaded_by = na.val(loaded_by,""),
       saved_by = na.val(saved_by,"")
@@ -42,10 +111,10 @@ datasets.info.html = function(project_dir) {
 
 
   if (NROW(exist.df)>0) {
-    table.head = "<tr><th>Data set</th><th>Size</th><th>Loaded in</th><th>Info</th></tr>"
+    table.head = "<tr><th>Data set</th><th>Size</th><th>Loaded in</th><th>Created in</th></tr>"
 
     exist.df = exist.df %>% mutate(
-      tr_str = paste0("<tr><td>",base,"</td><td>", data.size.str(mb),"</td><td>",loaded_by,"</td><td>", ifelse(changed,"modified",""),"</td></tr>")
+      tr_str = paste0("<tr><td>",file_base,"</td><td>", data.size.str(mb),"</td><td>",loaded_by,"</td><td>", saved_by, "</td></tr>")
     )
     tbody = paste0(exist.df$tr_str, collapse="\n")
 
@@ -55,30 +124,22 @@ datasets.info.html = function(project_dir) {
     exists.tab.html = "<p>--- No data sets found in the supplement ---"
   }
 
-  # Missing data sets
-  # missing.df = data_load %>%
-  #   anti_join(data_save, by="base") %>%
-  #   filter(runs.noerr==0) %>%
-  #   mutate(
-  #     loaded_by = na.val(do_str,"")
-  #   )
-
   missing.df = data_load %>%
-    filter(runs.noerr==0 & (runs.err > 0 | (!base %in% fi$base)) ) %>%
-    left_join(select(data_save,base, intermediate), by="base") %>%
+    filter(times_read_ok==0 & (times_read_err > 0 & (!file_base %in% data_file$file_base)) ) %>%
+    left_join(select(data_save,file_base, intermediate), by="file_base") %>%
     mutate(
       intermediate = na.val(intermediate, FALSE),
       loaded_by = na.val(do_str,"")
     ) %>%
-    filter(!is.na(base) & is.true(tools::file_path_sans_ext(base) !="")) %>%
-    arrange(desc(intermediate),base)
+    filter(!is.na(file_base) & is.true(tools::file_path_sans_ext(file_base) !="")) %>%
+    arrange(desc(intermediate),file_base)
 
 
   if (NROW(missing.df)>0) {
     table.head = "<tr><th>Data set</th><th>Intermediate</th><th>Supposed to be loaded in</th></tr>"
 
     missing.df = missing.df %>% mutate(
-      tr_str = paste0("<tr><td>",base,"</td><td>",ifelse(intermediate,"Yes","No"),"</td><td>",loaded_by,"</td></tr>")
+      tr_str = paste0("<tr><td>",file_base,"</td><td>",ifelse(intermediate,"Yes","No"),"</td><td>",loaded_by,"</td></tr>")
     )
     tbody = paste0(missing.df$tr_str, collapse="\n")
     missing.tab.html = paste0('\n<table class="table-mini table table-striped">
@@ -91,18 +152,18 @@ datasets.info.html = function(project_dir) {
   temp.df = data_save %>%
     mutate(
       saved_by = na.val(do_str,""),
-      ext = str.right.of(base,"."),
-      exists = base %in% exist.df$base,
+      ext = str.right.of(file_base,"."),
+      exists = file_base %in% exist.df$file_base,
     ) %>%
     # Remove files generated with Stata tempfile like
     # St1117213.000001
-    filter(! (startsWith(base,"St") & nchar(ext)>=5))
+    filter(nchar(ext <= 4) | ext %in% data_set_extensions())
 
   if (NROW(temp.df)>0) {
     table.head = "<tr><th>Data set</th><th>Exists</th><th>Created in</th></tr>"
 
     temp.df = temp.df %>% mutate(
-      tr_str = paste0("<tr><td>",base,"</td><td>",ifelse(exists,"Yes","No"),"</td><td>",saved_by,"</td></tr>")
+      tr_str = paste0("<tr><td>",file_base,"</td><td>",ifelse(exists,"Yes","No"),"</td><td>",saved_by,"</td></tr>")
     )
     tbody = paste0(temp.df$tr_str, collapse="\n")
     temp.tab.html = paste0('\n<table class="table-mini table table-striped">

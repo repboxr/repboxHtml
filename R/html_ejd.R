@@ -1,25 +1,129 @@
 example = function() {
-  library(repboxMain)
-  project_dir = "~/repbox/projects_ejd/aejpol_12_4_10"
-  project_dir = "~/repbox/projects_ejd/aejmic_14_4_17"
-  project_dir = "~/repbox/projects_ejd/pandp_108_1_30"
-  repbox.ejd.html(project_dir)
-  rstudioapi::filesPaneNavigate(paste0(project_dir,"/repbox"))
+  library(repboxHtml)
+  project_dir = "~/repbox/projects_gha/aejapp_1_2_7"
+  repbox_ejd_report_html(project_dir)
+  rstudioapi::filesPaneNavigate(paste0(project_dir))
 
+  library(repboxRun)
+  steps = repboxRun::repbox_steps_from(file_info = TRUE,static_code = TRUE, art=TRUE,reproduction = TRUE, reg=FALSE, repbox_repdb = TRUE,map = FALSE,html=TRUE)
+  #steps = repboxRun::repbox_steps_from(html=TRUE)
+  opts = repbox_run_opts(stop.on.error=TRUE,html_opts = repbox_html_opts_just_ejd())
+  repboxRun::repbox_run_project(project_dir, lang="stata",steps = steps, opts=opts)
 
-  repbox.make.www(project_dir, just.overview=!TRUE, overwrite.shared = TRUE,for.rstudio = TRUE)
-
-  project_dir = "~/repbox/projects_ejd/aejpol_12_4_10"
-  copy.ejd.www(project_dir)
-  project_dir = "~/repbox/projects_ejd/aejmic_13_2_11"
-  copy.ejd.www(project_dir)
-
-
-  # This only works in 8333 container. Otherwise web is not linked!
-  copy.all.ejd.www()
-  rstudioapi::filesPaneNavigate(paste0(project_dir,"/repbox"))
-  rstudioapi::filesPaneNavigate("~/repbox/repboxMain/R")
+  rstudioapi::filesPaneNavigate(paste0(project_dir,"/reports"))
+  rstudioapi::filesPaneNavigate("~/repbox/repboxHtml/R")
 }
+
+repbox_copy_images_to_ejd_report = function(project_dir) {
+  image_files = list.files(file.path(project_dir, "repbox","www","images"),full.names = TRUE)
+  ejd_img_dir = file.path(project_dir,"reports/report_ejd/images")
+  dir.create(ejd_img_dir,recursive = TRUE)
+  file.copy(image_files, ejd_img_dir)
+}
+
+repbox_ejd_report_html = function(project_dir, parcels = list(), opts=repbox_html_opts_just_ejd()) {
+  restore.point("repbox_ejd_report_html")
+
+  parcels = repboxDB::repdb_load_parcels(project_dir, c("art", "sup", "stata_run_cmd","stata_file", "stata_cmd","stata_do_run_info","data_file","data_write","data_read"), parcels=parcels)
+
+  if (is.null(parcels$stata_do_run_info)) {
+    parcels = make_parcel_stata_do_run_info(project_dir, parcels)
+  }
+  if (is.null(parcels$data_file)) {
+    parcels = make_parcel_data_file_info(project_dir, parcels)
+  }
+
+
+  sup = parcels$sup$sup
+  art = parcels$art$art
+  art$Journ = toupper(art$journ)
+  if (is.null(art$authors)) art$authors = ""
+  art$authors = stringi::stri_replace_last_fixed(art$authors,", "," and " )
+  art = as.list(art)
+
+  prefix = paste0("")
+  options(repbox.url.prefix = prefix)
+  project = basename(project_dir)
+  time = paste0(Sys.time(), " (UTC)")
+
+  report.frag = readLines(system.file("fragments/ejd.html", package="repboxHtml")) %>% merge.lines()
+
+  do_html = report_do_overview(project_dir, parcels=parcels, link_with_tabs = FALSE)
+  do_df = parcels$stata_do_run_info$stata_do_run_info
+
+  if (NROW(do_df)>0) {
+    sum = do_df[1,]
+    noerr_share_num = ifelse(isTRUE(sum$num_runs > 0),(sum$num_runs_err) / sum$num_runs, NA)
+    noerr_share = ifelse(is.na(noerr_share_num),"---",paste0(round(100*noerr_share_num),"%"))
+  } else {
+    noerr_share = "-- No do files found --"
+  }
+
+
+  data_info = datasets_info_html(project_dir, parcels)
+  data_sets_html = data_info$html
+
+  if (any(is.true(do_df$timeout))) {
+    timeout_info = "The analyis in a do file took so long that we triggered a timeout and exited the analysis. A timeout can also cause errors in other do files. "
+    has_timeout = "Yes"
+  } else {
+    timeout_info = ""
+    has_timeout = "No"
+  }
+
+  info_txt = ""
+  info_txt  = paste0(info_txt, timeout_info)
+  if ( isTRUE((round(noerr_share_num*100) < 100 & noerr_share_num > 0.8) | (NROW(data_info$missing.df)==0 & NROW(data_info$exist.df)>0))) {
+    info_txt = paste0(info_txt,"Note that even if a human can reproduce the analysis, often less than 100% of commands run without error in the automatic reproduction. ")
+  }
+  if (NROW(data_info$missing.df)>0 & NROW(data_info$exist.df)>0) {
+    info_txt = paste0(info_txt,"Sometimes the main analysis can be reproduced even if some data sets are missing, e.g. the missing data sets could be raw data files that are not directly needed. On the other hand, existence of a data set file does not imply that the data is indeed there: the data set could be empty or contain simulated data if the original data is confidential or proprietary. The tables below will provide more information.  ")
+  }
+
+
+  num_missing_data_org = sum(!data_info$missing.df$intermediate)
+  num_missing_data_all = NROW(data_info$missing.df$intermediate)
+  if (num_missing_data_all != num_missing_data_org) {
+    num_missing_data = paste0(num_missing_data_org, " - ",num_missing_data_all,"*" )
+    info_txt = paste0(info_txt, paste0("<br>*We detected ", num_missing_data_all," missing data sets if we include missing intermediate data sets that were supposed to be generated by Stata code, otherwise just detected ", num_missing_data_org, " missing data sets."))
+  } else {
+    num_missing_data = num_missing_data_all
+  }
+
+  vals = c(art,list(data_url = sup$sup_url,info_txt = info_txt, time=time, re_sum = do_html, data_sets_html=data_sets_html, project=project, has_timeout = has_timeout, timeout_info = timeout_info,  noerr_share=noerr_share, num_misssing_data=num_missing_data, num_existing_data = NROW(data_info$exist.df)))
+  content.html = glue::glue(report.frag, .envir=vals)
+
+
+  # overview
+  body = as.character(fluidPage(HTML(content.html)))
+  head = repbox_html_header(path.prefix = "../")
+  head = paste0(head, "<style> p {max-width: 60em;}</style>")
+  html = repbox_html_page(body=body, header=head, title=paste0("Report for ",basename(project_dir)), footer_scripts = NULL)
+
+
+  if (!dir.exists(paste0(project_dir,"/reports/report_ejd")))
+    dir.create(paste0(project_dir,"/reports/report_ejd"))
+
+
+  writeUtf8(merge.lines(html),paste0(project_dir,"/reports/report_ejd/index.html"))
+
+  # Make do.html
+
+  do_opts = opts
+  do_opts$img_inline=FALSE
+
+  body = html_just_do(project_dir,parcels = parcels,opts=do_opts)
+  head = repbox_html_header(path.prefix = "../")
+  html = repbox_html_page(body=body, header=head, title=paste0(basename(project_dir), " do files"))
+  writeUtf8(merge.lines(html),paste0(project_dir,"/reports/report_ejd/do.html"))
+
+  return(parcels)
+}
+
+
+
+##### OLD CODE BELOW
+
 
 make.ejd.www.index.page = function(info.file = "~/repbox/repbox_ejd_infos.Rds", www.dir = "~/web/repbox", project.dirs = NULL) {
   restore.point("make.ejd.www.index.page")
@@ -96,7 +200,7 @@ make.all.ejd.html = function(project.dirs=NULL, overwrite=FALSE) {
     } else {
       exists = file.exists(file.path(project_dir,"repbox","www_ejd","repbox.css"))
       if (!exists) {
-        res.dir = system.file("www",package="repboxMain")
+        res.dir = system.file("www",package="repboxHtml")
         copy.dir(file.path(res.dir,"shared"), file.path(project_dir,"repbox","www_ejd","shared") )
         file.copy(file.path(res.dir,"do_bottom.js"), file.path(project_dir,"repbox","www_ejd"))
         file.copy(file.path(res.dir,"repbox.css"), file.path(project_dir,"repbox","www_ejd"))
@@ -110,116 +214,4 @@ make.all.ejd.html = function(project.dirs=NULL, overwrite=FALSE) {
   projects
 }
 
-repbox.ejd.html = function(project_dir,  su = readRDS.or.null(paste0(project_dir,"/repbox/stata/repbox_results.Rds"))) {
-  restore.point("repbox.ejd.html")
-
-  ejd.art.file = file.path(project_dir,"meta","ejd_art.Rds")
-  if (!file.exists(ejd.art.file)) {
-    cat(paste0("\nCannot make EJD HTML for ", project_dir, " since ejd_art.Rds does not exist. Probably not a valid EJD project.\n"))
-    return(invisible())
-  }
-  art = readRDS(ejd.art.file)
-  art$Journ = toupper(art$journ)
-  if (is.null(art$authors)) art$authors = ""
-  art$authors = stringi::stri_replace_last_fixed(art$authors,", "," and " )
-  art = as.list(art)
-
-  prefix = paste0("")
-  options(repbox.url.prefix = prefix)
-  www.dir = paste0(project_dir,"/repbox/www")
-
-  head = repbox.www.head("")
-
-  project = basename(project_dir)
-  time = paste0(Sys.time(), " (UTC)")
-
-
-
-  report.frag = readLines(system.file("fragments/ejd.html", package="repboxMain")) %>% merge.lines()
-
-  res = report.do.html(project_dir, su, ma=NULL,link.with.tabs = FALSE, return.do.df = TRUE)
-  do.summary.html = res$html
-  do.info = res$do.df
-  if (NROW(do.info)>0) {
-    sum = do.info[1,]
-    noerr_share_num = ifelse(isTRUE(sum$runs > 0),(sum$runs.with.data-sum$runs.err.with.data) / sum$runs, NA)
-    noerr_share = ifelse(is.na(noerr_share_num),"---",paste0(round(100*noerr_share_num),"%"))
-  } else {
-    noerr_share = "-- No do files found --"
-  }
-
-
-  data.info = datasets.info.html(project_dir)
-  data.sets.html = data.info$html
-
-  if (any(is.true(su$dotab$timeout))) {
-    timeout_info = "The analyis in a do file took so long that we triggered a timeout and exited the analysis. A timeout can also cause errors in other do files. "
-    has_timeout = "Yes"
-  } else {
-    timeout_info = ""
-    has_timeout = "No"
-  }
-
-  if (!is_empty(art$readme_file)) {
-    readme_a = paste0('<a target = "_blank" href="',art$readme_file,'">Readme</a>')
-    readme_li = paste0('<li><a target = "_blank" href="',art$readme_file,'">Readme</a></li>')
-  } else {
-    readme_a = "Readme in the supplement"
-    readme_li = ""
-  }
-
-  info_txt = ""
-  info_txt  = paste0(info_txt, timeout_info)
-  if ( isTRUE((round(noerr_share_num*100) < 100 & noerr_share_num > 0.8) | (NROW(data.info$missing.df)==0 & NROW(data.info$exist.df)>0))) {
-    info_txt = paste0(info_txt,"Note that even if a human can reproduce the analysis, often less than 100% of commands run without error in the automatic reproduction. ")
-  }
-  if (NROW(data.info$missing.df)>0 & NROW(data.info$exist.df)>0) {
-    info_txt = paste0(info_txt,"Sometimes the main analysis can be reproduced even if some data sets are missing, e.g. the missing data sets could be raw data files that are not directly needed. On the other hand, existence of a data set file does not imply that the data is indeed there: the data set could be empty or contain simulated data if the original data is confidential or proprietary. The ", readme_a," and the tables below will provide more information.  ")
-  }
-
-
-  num_missing_data_org = sum(!data.info$missing.df$intermediate)
-  num_missing_data_all = NROW(data.info$missing.df$intermediate)
-  if (num_missing_data_all != num_missing_data_org) {
-    num_missing_data = paste0(num_missing_data_org, " - ",num_missing_data_all,"*" )
-    info_txt = paste0(info_txt, paste0("<br>*We detected ", num_missing_data_all," missing data sets if we include missing intermediate data sets that were supposed to be generated by Stata code, otherwise just detected ", num_missing_data_org, " missing data sets."))
-  } else {
-    num_missing_data = num_missing_data_all
-  }
-
-  vals = c(art, list(info_txt = info_txt, time=time, re_sum = do.summary.html, data_sets_html=data.sets.html, project=project, has_timeout = has_timeout, timeout_info = timeout_info, readme_li = readme_li, noerr_share=noerr_share, num_misssing_data=num_missing_data, num_existing_data = NROW(data.info$exist.df)))
-  content.html = glue::glue(report.frag, .envir=vals)
-
-
-  # overview
-  body = as.character(fluidPage(HTML(content.html)))
-  html = paste0("<html><title>Report for ",basename(project_dir),"</title>\n",head,"<style> p {max-width: 60em;}</style><body>",body, "</body></html>")
-  if (!dir.exists(paste0(project_dir,"/repbox/www_ejd")))
-      dir.create(paste0(project_dir,"/repbox/www_ejd"))
-
-
-  writeLines(html,paste0(project_dir,"/repbox/www_ejd/index.html"))
-
-
-  res.dir = system.file("www",package="repboxMain")
-
-  copy.dir(file.path(res.dir,"shared"), file.path(project_dir,"repbox","www_ejd","shared") )
-  try(copy.dir(file.path(project_dir,"repbox","www","images"), file.path(project_dir,"repbox","www_ejd","images")))
-  #file.copy(file.path(project_dir,"repbox","www","do.html"), file.path(project_dir,"repbox","www_ejd"))
-
-  file.copy(file.path(res.dir,"do_bottom.js"), file.path(project_dir,"repbox","www_ejd"))
-  file.copy(file.path(res.dir,"repbox.css"), file.path(project_dir,"repbox","www_ejd"))
-
-  do.tabs.html = HTML(project.do.tabs.html(project_dir,ma = NULL, su=su,add.match.info=FALSE,title.html = paste0('<h3>Do files for "',art$title,'"</h3>')))
-
-  ui = fluidPage(
-    do.tabs.html,
-    tags$script(src="do_bottom.js")
-  )
-  body = as.character(ui) %>% merge.lines()
-  html = paste0("<html><title>Do files ",basename(project_dir),"</title>\n",head,"<body>",body, "</body></html>")
-  writeLines(html, file.path(project_dir,"repbox","www_ejd","do.html"))
-
-  invisible(html)
-}
 

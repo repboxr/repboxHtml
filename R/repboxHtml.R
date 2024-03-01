@@ -13,15 +13,26 @@ example = function() {
 repbox_project_html = function(project_dir, lang = c("stata"), opts = repbox_html_opts(), parcels=NULL) {
   restore.point("repbox_project_html")
   #parcels = html_make_parcels(project_dir)
-  if ("stata" %in% lang) {
-    html = html_do_and_tab(project_dir,parcels = parcels, opts=opts)
-    html.dir = file.path(project_dir,"reports")
-    repbox_save_html(repbox_html_page(html), "do_tab.html", html.dir)
+
+  if ("ejd" %in% opts$make_what) {
+    ejd_opts = opts
+    ejd_opts$add_mapping = FALSE
+    repbox_ejd_report_html(project_dir, parcels=parcels, opts=ejd_opts)
   }
-  if ("r" %in% lang) {
-    html = html_all_r(project_dir)
-    html.dir = file.path(project_dir,"reports")
-    repbox_save_html(html %>% repbox_add_html_header(), "r_code.html", html.dir)
+
+  if ("general" %in% opts$make_what) {
+    if ("stata" %in% lang) {
+      html = html_do_and_tab(project_dir,parcels = parcels, opts=opts)
+      html.dir = file.path(project_dir,"reports")
+      repbox_save_html(repbox_html_page(html), "do_tab.html", html.dir)
+    }
+    if ("r" %in% lang) {
+      html = html_all_r(project_dir)
+      html.dir = file.path(project_dir,"reports")
+      repbox_save_html(html %>% repbox_add_html_header(), "r_code.html", html.dir)
+    }
+
   }
+
   invisible(parcels)
 }
