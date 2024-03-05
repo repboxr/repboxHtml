@@ -13,6 +13,18 @@ example = function() {
 repbox_project_html = function(project_dir, lang = c("stata"), opts = repbox_html_opts(), parcels=NULL) {
   restore.point("repbox_project_html")
   #parcels = html_make_parcels(project_dir)
+  if (opts$copy_shared_dir) {
+    repbox_copy_shared_www(project_dir,overwrite = TRUE)
+  }
+
+  if (opts$copy_image_dir) {
+    img.dir = paste0(project_dir, "/repbox/www/images")
+    if (dir.exists(img.dir)) {
+      copy.dir(img.dir, paste0(project_dir,"/reports/images"))
+    }
+  }
+
+
 
   if ("ejd" %in% opts$make_what) {
     ejd_opts = opts
@@ -36,3 +48,15 @@ repbox_project_html = function(project_dir, lang = c("stata"), opts = repbox_htm
 
   invisible(parcels)
 }
+
+
+
+repbox_copy_shared_www = function(project_dir, www_dir=file.path(project_dir,"reports"), overwrite=FALSE) {
+  # Copy shared
+  if (!dir.exists(www_dir)) dir.create(www_dir)
+  pkg.www = system.file("www", package="repboxHtml")
+  files = list.files(pkg.www,include.dirs = TRUE,recursive = FALSE, full.names=TRUE)
+  file.copy(files, www_dir,recursive = TRUE,overwrite = overwrite)
+}
+
+
