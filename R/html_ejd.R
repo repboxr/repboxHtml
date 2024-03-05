@@ -90,7 +90,13 @@ repbox_ejd_report_html = function(project_dir, parcels = list(), opts=repbox_htm
     num_missing_data = num_missing_data_all
   }
 
-  vals = c(art,list(data_url = sup$sup_url,info_txt = info_txt, time=time, re_sum = do_html, data_sets_html=data_sets_html, project=project, has_timeout = has_timeout, timeout_info = timeout_info,  noerr_share=noerr_share, num_misssing_data=num_missing_data, num_existing_data = NROW(data_info$exist.df)))
+  if (is.empty(sup$sup_url)) {
+    sup_link = ""
+  } else {
+    sup_link = paste0('<li><a href="', sup$sup_url,'">Data and code supplement</a></li>')
+  }
+
+  vals = c(art,list(sup_link = sup_link,info_txt = info_txt, time=time, re_sum = do_html, data_sets_html=data_sets_html, project=project, has_timeout = has_timeout, timeout_info = timeout_info,  noerr_share=noerr_share, num_misssing_data=num_missing_data, num_existing_data = NROW(data_info$exist.df)))
   content.html = glue::glue(report.frag, .envir=vals)
 
 
