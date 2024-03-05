@@ -102,7 +102,7 @@ repbox_ejd_report_html = function(project_dir, parcels = list(), opts=repbox_htm
 
 
   if (!dir.exists(paste0(project_dir,"/reports/report_ejd")))
-    dir.create(paste0(project_dir,"/reports/report_ejd"))
+    dir.create(paste0(project_dir,"/reports/report_ejd"),recursive = TRUE)
 
 
   writeUtf8(merge.lines(html),paste0(project_dir,"/reports/report_ejd/index.html"))
