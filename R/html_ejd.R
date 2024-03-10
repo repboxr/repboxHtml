@@ -56,6 +56,7 @@ repbox_ejd_report_html = function(project_dir, parcels = list(), opts=repbox_htm
     noerr_share_num = ifelse(isTRUE(sum$num_runs > 0),(sum$num_runs_err) / sum$num_runs, NA)
     noerr_share = ifelse(is.na(noerr_share_num),"---",paste0(round(100*noerr_share_num),"%"))
   } else {
+    noerr_share_num = NA
     noerr_share = "-- No do files found --"
   }
 

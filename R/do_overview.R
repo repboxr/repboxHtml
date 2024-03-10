@@ -7,6 +7,12 @@ make_parcel_stata_do_run_info = function(project_dir, parcels = list()) {
 
   do_df = parcels$stata_file$script_file
 
+  if (NROW(do_df)==0) {
+    parcels$stata_do_run_info = list(stata_do_run_info = repdb_null_to_empty(NULL, "stata_do_run_info"))
+    repboxDB::repdb_save_parcels(parcels["stata_do_run_info"],file.path(project_dir, "repdb"))
+    return(parcels)
+  }
+
   # dotab contains some information that we have not yet nicely stored
   # in a repdb table
   dotab_file = file.path(project_dir, "/repbox/stata/dotab.Rds")

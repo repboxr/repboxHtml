@@ -248,6 +248,12 @@ log_info_html = function(run_df, project_dir,opts) {
   n = NROW(run_df)
   if (n==0) return(list())
 
+  if (any(is.na(run_df$script_num))) {
+    run_df = filter(run_df,!is.na(script_num))
+    repbox_problem(type="na_rundf",msg = "run_df has rows in which the original scriptfile (script_num, orgline) are not given. No log_info_html will be generated for those calls.", fail_action = "msg", project_dir=project_dir)
+
+  }
+
   # include images, possibly img_inline with bas64 encoding
   img.dir = paste0(project_dir, "/repbox/www/images")
   run_df$img.src = ""
