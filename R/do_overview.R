@@ -82,11 +82,13 @@ report_do_overview = function(project_dir, parcels = list(), link_with_tabs=TRUE
     )) %>%
     mutate(
       info = paste0(case_when(
-        !was_run~"not run",
-        is_included~"called in other do",
-        is.na(runtime) ~ "just parsed ",
-        TRUE ~ ""
-      ), info)
+          !was_run~"not run",
+          is_included~"called in other do",
+          is.na(runtime) ~ "just parsed ",
+          TRUE ~ ""
+        ),
+        ifelse(info=="","",paste0(" ", info))
+      )
     )
 
 

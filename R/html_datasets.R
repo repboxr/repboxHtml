@@ -81,8 +81,10 @@ datasets_info_html = function(project_dir, parcels=list()) {
   data_file = parcels$data_file$data_file %>% mutate(file_base = basename(file_path))
   data_read = parcels$data_read$data_read
   data_write = parcels$data_write$data_write
+  exts = data_set_extensions()
 
   data_load = data_read %>%
+    filter(tolower(file_type) %in% exts) %>%
     left_join(select(do_files, do_file = file_name, script_num), by="script_num") %>%
     group_by(file_base) %>%
     summarize(
@@ -91,6 +93,7 @@ datasets_info_html = function(project_dir, parcels=list()) {
     )
 
   data_save = data_write %>%
+    filter(tolower(file_type) %in% exts) %>%
     left_join(select(do_files, do_file = file_name, script_num), by="script_num") %>%
     group_by(file_base) %>%
     summarize(
