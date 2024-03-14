@@ -53,7 +53,7 @@ repbox_ejd_report_html = function(project_dir, parcels = list(), opts=repbox_htm
 
   if (NROW(do_df)>0) {
     sum = do_df[1,]
-    noerr_share_num = ifelse(isTRUE(sum$num_runs > 0),(sum$num_runs_err) / sum$num_runs, NA)
+    noerr_share_num = ifelse(isTRUE(sum$num_runs > 0),(sum$num_runs-sum$num_runs_err) / sum$num_runs, NA)
     noerr_share = ifelse(is.na(noerr_share_num),"---",paste0(round(100*noerr_share_num),"%"))
   } else {
     noerr_share_num = NA
