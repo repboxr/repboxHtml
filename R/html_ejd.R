@@ -1,7 +1,7 @@
 example = function() {
   library(repboxHtml)
-  project_dir = "~/repbox/projects_gha/aejapp_1_2_7"
-  repbox_ejd_report_html(project_dir)
+  project_dir = "~/repbox/gha_ejd/projects_ejd_gha2/restud_90_4_1"
+  parcels = repbox_ejd_report_html(project_dir)
   rstudioapi::filesPaneNavigate(paste0(project_dir))
 
   library(repboxRun)
@@ -52,7 +52,10 @@ repbox_ejd_report_html = function(project_dir, parcels = list(), opts=repbox_htm
   do_df = parcels$stata_do_run_info$stata_do_run_info
 
   if (NROW(do_df)>0) {
-    sum = do_df[1,]
+    sum = do_df %>%
+      summarize(
+        across(is_included:has_parse_err, ~sum(.,na.rm=TRUE))
+      )
     noerr_share_num = ifelse(isTRUE(sum$num_runs > 0),(sum$num_runs-sum$num_runs_err) / sum$num_runs, NA)
     noerr_share = ifelse(is.na(noerr_share_num),"---",paste0(round(100*noerr_share_num),"%"))
   } else {

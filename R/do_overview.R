@@ -139,8 +139,8 @@ report_do_overview = function(project_dir, parcels = list(), link_with_tabs=TRUE
 </tr>
   '
   do_df = mutate(do_df, row.html = paste0(
-    '<tr', ifelse(is.total,' class="total-row"',""),'>','<td>',ifelse(analyzed,
-                                                                      paste0('<a href="',do.line.link(script_num, link_with_tabs = link_with_tabs),'">',file,"</a>"),
+    '<tr', ifelse(is.total,' class="total-row"',""),'>','<td>',
+    ifelse(analyzed & !is.total,                                                                    paste0('<a href="',do.line.link(script_num, link_with_tabs = link_with_tabs),'">',file,"</a>"),
                                                                       file),'</td>',
     '<td style="text-align: right;">',na.val(round(runtime),"-"),'</td>',
 
