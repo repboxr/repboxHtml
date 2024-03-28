@@ -74,3 +74,10 @@ if (urlpar.has('do')) {
   }
 }
 
+
+if (urlpar.has('tabid')) {
+  var tabid = urlpar.get('tabid');
+  $('#tabtabs a[href="#tabtab'+tabid+'"]').tab('show');
+}
+
+
