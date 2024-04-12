@@ -93,7 +93,8 @@ do_code_html = function(project_dir, script_num, file_path, do_txt, log_info_htm
     summarize(
       cmdline = first(cmdline),
       runerr = any(is.true(errcode != 0)),
-      errmsg = trimws(paste0(unique(trimws(errmsg)), collapse=" "))
+      errmsg = trimws(paste0(unique(trimws(errmsg)), collapse=" ")),
+      missing_data = any(is.true(missing_data))
     ) %>%
     arrange(orgline) %>%
     mutate(
@@ -124,15 +125,20 @@ do_code_html = function(project_dir, script_num, file_path, do_txt, log_info_htm
           is.true(!reg_did_run) ~ paste0(" Regression base run failed: ", reg_problem,"."),
           TRUE ~ ""
         ),
-        reg_deviation_debug_txt = ifelse(reg_deviation < 1e-12,""," Base run results deviate from original replication."),
+        reg_deviation_debug_txt = ifelse(is.true(reg_deviation > 1e-12)," Base run results deviate from original replication.",""),
         debug_problem_txt = paste0(reg_problem_debug_txt, reg_deviation_debug_txt)
+      ) %>%
+      mutate(
+        debug_problem_txt = paste0(debug_problem_txt, ifelse(missing_data," missing data", ""))
       )
+
+
   line_debug_txt = run_df %>%
     group_by(orgline) %>%
     summarize(
       debug_txt = ifelse(any(is_reg),
-        paste0("runid: ",runid, " step: ", step, debug_problem_txt, collapse="\n"),
-        paste0("runid: ", paste0(runid, collapse=", "))
+        paste0("runid: ",runid, ifelse(is.na(step), " ", paste0(" step: ", step)), debug_problem_txt, collapse="\n"),
+        paste0("runid: ", paste0(runid, collapse=", "), " ", paste0(unique(debug_problem_txt), collapse=" "))
       ),
       has_reg_problem = any(!is.na(reg_problem) & reg_problem != "")
     )
@@ -154,6 +160,7 @@ do_code_html = function(project_dir, script_num, file_path, do_txt, log_info_htm
   ldf$class = case_when(
     is.true(ldf$runerr) ~ "err-line",
     is.true(ldf$not.run) ~ "norun-line",
+    is.true(ldf$missing_data) ~ "mida-line",
     TRUE ~ "noerr-line"
   )
 
@@ -250,7 +257,7 @@ log_info_html = function(run_df, project_dir,opts) {
 
   if (any(is.na(run_df$script_num))) {
     run_df = filter(run_df,!is.na(script_num))
-    repbox_problem(type="na_rundf",msg = "run_df has rows in which the original scriptfile (script_num, orgline) are not given. No log_info_html will be generated for those calls.", fail_action = "msg", project_dir=project_dir)
+    repbox_problem(type="na_run_df",msg = "run_df has rows in which the original scriptfile (script_num, orgline) are not given. No log_info_html will be generated for those calls.", fail_action = "msg", project_dir=project_dir)
 
   }
 

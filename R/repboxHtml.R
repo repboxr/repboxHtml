@@ -35,28 +35,16 @@ repbox_project_html = function(project_dir, lang = c("stata"), opts = repbox_htm
   if ("general" %in% opts$make_what) {
     if ("stata" %in% lang) {
       html = html_do_and_tab(project_dir,parcels = parcels, opts=opts)
-      html.dir = file.path(project_dir,"reports")
-      repbox_save_html(repbox_html_page(html), "do_tab.html", html.dir)
+      repbox_save_html(repbox_html_page(html), "do_tab.html",project_dir=project_dir, ensure_shared_www = FALSE)
     }
     if ("r" %in% lang) {
       html = html_all_r(project_dir)
-      html.dir = file.path(project_dir,"reports")
-      repbox_save_html(html %>% repbox_add_html_header(), "r_code.html", html.dir)
+      repbox_save_html(html %>% repbox_add_html_header(), "r_code.html", project_dir=project_dir, ensure_shared_www = FALSE)
     }
 
   }
 
   invisible(parcels)
-}
-
-
-
-repbox_copy_shared_www = function(project_dir, www_dir=file.path(project_dir,"reports"), overwrite=FALSE) {
-  # Copy shared
-  if (!dir.exists(www_dir)) dir.create(www_dir)
-  pkg.www = system.file("www", package="repboxHtml")
-  files = list.files(pkg.www,include.dirs = TRUE,recursive = FALSE, full.names=TRUE)
-  file.copy(files, www_dir,recursive = TRUE,overwrite = overwrite)
 }
 
 

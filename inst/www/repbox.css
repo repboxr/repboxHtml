@@ -69,6 +69,11 @@ div .nav>li>a{
   background: #ffff88;
 }
 
+.mida-line.code-highlight {
+  background: #ffff88;
+}
+
+
 .error-comment {
   color: #880000;
   font-family: "Comic Sans MS", "Comic Sans", cursive
@@ -136,6 +141,10 @@ div .nav>li>a{
 
 .norun-line {
   background: #eee;
+}
+
+.mida-line {
+  background: #ffeeee;
 }
 
 .noerr-line {
