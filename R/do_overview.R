@@ -42,7 +42,9 @@ make_parcel_stata_do_run_info = function(project_dir, parcels = list()) {
     summarize(
       was_run = TRUE,
       num_runs = n(),
-      num_runs_err = sum(has_error),
+      num_ok_runs = sum(!has_error & !no_data),
+      num_no_dat_runs = sum(no_data),
+      num_runs_err = sum(has_error & !no_data),
       num_load_data = sum(loads_data),
       num_load_data_err = sum(has_error & loads_data)
     )
