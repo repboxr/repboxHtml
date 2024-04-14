@@ -154,7 +154,7 @@ do_code_html = function(project_dir, script_num, file_path, do_txt, log_info_htm
   # Users are asked to open log
   if (opts$show_first_err_msg) {
     rows = which(ldf$firsterr)
-    ldf$comment[rows] = paste0(ldf$comment[rows],'\n<code class="error-comment">// Error in ',shorten.str(ldf$errmsg[rows],200),'</code>\n')
+    ldf$comment[rows] = paste0(ldf$comment[rows],'\n<code class="error-comment">// Error: ',shorten.str(ldf$errmsg[rows],200),'</code>\n')
   }
 
   ldf$class = case_when(
