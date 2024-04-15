@@ -252,6 +252,12 @@ adapt_too_big_run_df = function(run_df, opts) {
 log_info_html = function(run_df, project_dir,opts) {
   restore.point("log_info_html")
   i = 1
+
+  # Update: Some run_df entries may be incomplete
+  # and not have an orgline reference. Remove
+  # to prevent later errors
+  run_df = run_df[!is.na(run_df$orgline),]
+
   n = NROW(run_df)
   if (n==0) return(list())
 
