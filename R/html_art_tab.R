@@ -9,7 +9,7 @@ example = function() {
   rstudioapi::filesPaneNavigate("~/repbox/repboxHtml/R")
 }
 
-html_art_tabs = function(project_dir, parcels=NULL, opts = repbox_html_opts(add_mapping=add_mapping), add_mapping=TRUE) {
+html_art_tabs = function(project_dir, parcels=NULL, opts = repbox_html_opts(add_mapping=add_mapping), add_mapping=TRUE, return_fragments=FALSE, just_tabids = NULL) {
   restore.point("html_art_tabs")
 
   parcels = repdb_load_parcels(project_dir, c("art_tab","art_tab_cell"), parcels)
@@ -107,6 +107,32 @@ html_art_tabs = function(project_dir, parcels=NULL, opts = repbox_html_opts(add_
     tab_df = left_join(tab_df, parcels$art_tab_source$art_tab_source, by="tabid")
   }
 
+  if (!is.null(just_tabids)) {
+    tabids = intersect(tabids, just_tabids)
+  }
+
+  if (return_fragments) {
+    fragments = lapply(tabids, function(tabid) {
+      tab = tab_df[tab_df$tabid == tabid, ]
+      cells = cell_df[cell_df$tabid == tabid, ]
+
+      source_html = if (tab$pdf_file != "" & opts$add_art_source_tab)  html_source_tab(tab)
+      report_html = if (opts$add_tab_report & add_mapping)  html_tab_report(tab, cells, parcels)
+      ind_html = if (opts$add_tab_indicators) html_tab_indicators(tab, parcels)
+      tab_html = html_cell_tab(tab,cells, opts)
+
+      list(
+        tab_html = tab_html,
+        source_html = source_html,
+        report_html = report_html,
+        ind_html = ind_html
+      )
+    })
+    names(fragments) = tabids
+    return(fragments)
+
+  }
+
   contents = lapply(tabids, function(tabid) {
     tab = tab_df[tab_df$tabid == tabid, ]
     cells = cell_df[cell_df$tabid == tabid, ]
@@ -142,6 +168,8 @@ html_art_tabs = function(project_dir, parcels=NULL, opts = repbox_html_opts(add_
   html
   return(html)
 }
+
+
 
 html_cell_tab = function(tab, cells, opts) {
   restore.point("html_cell_tab")

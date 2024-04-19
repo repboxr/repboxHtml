@@ -15,6 +15,13 @@ load_full_run_df = function(project_dir, parcels=NULL) {
     left_join(select(cmd_df, file_path, line, orgline, is_reg), by=c("file_path","line")) %>%
     #left_join(select(file_df,file_path, script_num), by="file_path") %>%
     left_join(log_df, by=c("artid", "runid"))
+
+
+  # Correct old versions of run_df
+  if (!has.col(run_df, "missing_data")) {
+    run_df$missing_data = rep(FALSE, NROW(run_df))
+  }
+
   run_df
 }
 

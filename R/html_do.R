@@ -21,14 +21,17 @@ html_just_do = function(project_dir, parcels=NULL,opts = repbox_html_opts(add_ma
   html
 }
 
-
-html_all_do = function(project_dir, parcels=NULL, opts = repbox_html_opts()) {
+html_all_do = function(project_dir, parcels=list(), opts = repbox_html_opts(), return_fragments=FALSE, just_script_num=NULL,  just_runids=NULL) {
   restore.point("html_all_do")
 
-  parcels = repdb_load_parcels(project_dir, c("stata_source","stata_run_cmd","stata_run_log","stata_cmd", if (opts$add_debug_info) "reg_core"))
+  parcels = repdb_load_parcels(project_dir, c("stata_source","stata_run_cmd","stata_run_log","stata_cmd", if (opts$add_debug_info) "reg_core"), parcels = parcels)
 
   # script_source is script_file info + source text
   script_df = parcels$stata_source$script_source
+
+  if (!is.null(just_script_num)) {
+    script_df = script_df[script_df$script_num %in% just_script_num,]
+  }
 
   if (NROW(script_df)==0) {
     return("<p>The supplement has no do files</p>")
@@ -36,6 +39,15 @@ html_all_do = function(project_dir, parcels=NULL, opts = repbox_html_opts()) {
 
   run_df = load_full_run_df(project_dir, parcels)
   cmd_df = load_full_cmd_df(project_dir, parcels)
+
+  if (!is.null(just_runids)) {
+    run_df = filter(run_df, runid %in% just_runids)
+    cmd_df = semi_join(cmd_df, run_df, by=c("file_path", "line"))
+    script_df = semi_join(script_df, cmd_df, by=c("file_path"))
+    show_just_runid_lines = TRUE
+  } else {
+    show_just_runid_lines = FALSE
+  }
 
   # We may ignore some runs
   # if do file or a line has too many runs
@@ -53,12 +65,13 @@ html_all_do = function(project_dir, parcels=NULL, opts = repbox_html_opts()) {
     script_num = script_df$script_num[[i]]
     otabid = outer.tabids[i]
     do_txt = script_df$text[i]
-    do.html = do_code_html(project_dir, script_num=script_num,file_path = script_df$file_path[[i]], do_txt=do_txt,   run_df=run_df, cmd_df = cmd_df, log_info_html=log_info_html, opts=opts, parcels=parcels)
+    do.html = do_code_html(project_dir, script_num=script_num,file_path = script_df$file_path[[i]], do_txt=do_txt,   run_df=run_df, cmd_df = cmd_df, log_info_html=log_info_html, opts=opts, parcels=parcels, show_just_runid_lines=show_just_runid_lines)
     return(do.html)
-
-    html = repboxTabSetPanel(id=paste0("innertabset_",otabid), tabnames =c("Code","Comparison"),tabids = paste0(c("codetab_","comparetab_"),otabid),contents = do.html)
-
   })
+
+  if (return_fragments) {
+    return(contents)
+  }
 
   html = repboxTabSetPanel(type="pills",id="dotabs",tabnames = paste0(basename(script_df$file_path)),tabids = outer.tabids,contents = contents)
 
@@ -66,27 +79,40 @@ html_all_do = function(project_dir, parcels=NULL, opts = repbox_html_opts()) {
 }
 
 
+# If we just want fragments of some do code
+html_do_fragment = function(project_dir, parcels=list(), opts=repbox_html_opts(), just_script_num=NULL, just_runids=NULL) {
+  html_all_do(project_dir=project_dir, parcels=parcels, opts=opts, return_fragments = TRUE, just_script_num=just_script_num, just_runids=just_runids)
+}
+
 
 # In this version I try not to directly add matching information.
 # Instead general class info shall facilitate
 # color-coded mapping
-do_code_html = function(project_dir, script_num, file_path, do_txt, log_info_html, run_df, cmd_df, opts, parcels) {
+do_code_html = function(project_dir, script_num, file_path, do_txt, log_info_html, run_df, cmd_df, opts, parcels, show_just_runid_lines = FALSE) {
   restore.point("do_code_html")
 
   do_txt = sep.lines(do_txt)
 
   cmd_df = cmd_df[cmd_df$script_num == script_num,]
 
+  run_df = run_df[run_df$script_num == script_num,]
+
   #if (script_num == "1 Tables") stop()
 
   log_info_html = log_info_html[log_info_html$script_num == script_num,]
 
   ldf = tibble(orgline = seq_along(do_txt), txt = htmlEscape(do_txt), comment="", title="", class="", infobtn="", infobox="")
+
+  if (show_just_runid_lines) {
+    ldf = filter(ldf, orgline %in% run_df$orgline)
+  }
+
   ldf = left_join(ldf, select(cmd_df, orgline, line, is_reg, cmd), by=c("orgline"))
 
 
   # Aggregate run error info on orgline level
-  re = run_df[run_df$script_num==script_num,]
+  #re = run_df[run_df$script_num==script_num,]
+  re = run_df
 
   rel = re %>%
     group_by(orgline) %>%
@@ -109,7 +135,7 @@ do_code_html = function(project_dir, script_num, file_path, do_txt, log_info_htm
   ldf$is.cmd = !ldf$cmd %in% c("}","end","program","if","else")
   ldf$not.run = ldf$is.cmd & is.na(ldf$runerr)
 
-  rows = log_info_html$orgline
+  rows = match(log_info_html$orgline, ldf$orgline)
   ldf$infobtn[rows] = log_info_html$log.info.btn
   ldf$infobox[rows] = log_info_html$log.info.div
 
