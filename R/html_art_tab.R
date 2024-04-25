@@ -9,7 +9,7 @@ example = function() {
   rstudioapi::filesPaneNavigate("~/repbox/repboxHtml/R")
 }
 
-html_art_tabs = function(project_dir, parcels=NULL, opts = repbox_html_opts(add_mapping=add_mapping), add_mapping=TRUE, return_fragments=FALSE, just_tabids = NULL) {
+html_art_tabs = function(project_dir, parcels=NULL, opts = repbox_html_opts(add_mapping=add_mapping, just_tabids=just_tabids), add_mapping=TRUE, return_fragments=FALSE, just_tabids = NULL) {
   restore.point("html_art_tabs")
 
   parcels = repdb_load_parcels(project_dir, c("art_tab","art_tab_cell"), parcels)
@@ -25,70 +25,13 @@ html_art_tabs = function(project_dir, parcels=NULL, opts = repbox_html_opts(add_
   new_parcels = NULL
   if (opts$add_tab_indicators) new_parcels = "ind_tab_type"
   if (opts$add_art_source_tab) new_parcels = c(new_parcels, "art_tab_source")
+  parcels = repdb_load_parcels(project_dir, new_parcels, parcels)
 
-  if (opts$add_mapping) {
-    new_parcels = c(new_parcels, "map_cell", if (opts$add_tab_report) c("stata_cmd_tab_fig_ref","stata_run_cmd"))
-    parcels = repdb_load_parcels(project_dir, new_parcels, parcels)
-    map_df = parcels$map_cell$map_cell
-    add_mapping = !is.null(map_df)
-  } else {
-    add_mapping = FALSE
-  }
+  res = html_make_cell_df(project_dir,parcels, opts)
+  cell_df = res$cell_df
+  parcels = res$parcels
 
   if (add_mapping) {
-    new_parcels = c(new_parcels, "map_cell", if (opts$add_tab_report) c("stata_cmd_tab_fig_ref","stata_run_cmd"))
-    parcels = repdb_load_parcels(project_dir, new_parcels, parcels)
-    map_df = parcels$map_cell$map_cell
-
-    cell_df = cell_df %>% left_join(select(map_df, cellid, block, regid, num_type,match_type, runid, variant, block, cmd), by=c("cellid"))
-
-
-    cell_df = cell_df %>% mutate(
-      id_code = ifelse(is.true(cellid > 0), paste0(' id="cell_', cellid,'"'),""),
-      class_code = ifelse(is.true(match_type > 0),' class="tabnum"',""),
-      debug_txt = ifelse(cellid==0, "",paste0("cellid: ", cellid,"\nrunid: ", runid, "\nregid: ", regid, "\nvariant: ", variant,"\nblock: ", block)),
-      debug_title = ifelse(debug_txt == "","",paste0(' title="', debug_txt,'"') )
-    )
-
-    no_match_color = "#dddddd"
-    reg_best_color = hsl_to_rgb(0, 0.7, 0.8)
-    reg_best_approx_color = paste0("linear-gradient(45deg, ", reg_best_color,",",no_match_color,");")
-    reg_color = hsl_to_rgb(0, 0.3, 0.8)
-    reg_approx_color = reg_color
-    reg_approx_color = paste0("linear-gradient(45deg, ", reg_color,",",no_match_color,");")
-
-    # noreg_best_color = hsl_to_rgb(270, 0.7, 0.8)
-    # noreg_best_approx_color = paste0("linear-gradient(45deg, ", noreg_best_color,",",no_match_color,");")
-    # noreg_color = hsl_to_rgb(180, 0.7, 0.8)
-    # noreg_approx_color = paste0("linear-gradient(45deg, ", noreg_color,",",no_match_color,");")
-
-
-    cell_df = compute_cell_df_noreg_hue(cell_df)
-
-    cell_df$noreg_color = "#dddddd"
-    rows = !is.na(cell_df$noreg_hue)
-    cell_df$noreg_color[rows] = hsl_to_rgb(cell_df$noreg_hue[rows], 0.6, 0.8)
-
-    cell_df = cell_df %>% mutate(
-      bg_color = case_when(
-        is.na(cellid) ~ "",
-        match_type == 1 ~ reg_best_color,
-        match_type == 2 ~ reg_best_approx_color,
-        match_type == 3 ~ reg_color,
-        match_type == 4 ~ reg_approx_color,
-        match_type == 5 ~ noreg_color,
-        match_type == 6 ~ paste0("linear-gradient(45deg, ", noreg_color,",",no_match_color,");"),
-        match_type == 7 ~ noreg_color,
-        regid > 0 ~ no_match_color,
-        match_type == 0 ~ no_match_color,
-        TRUE ~ "#ffffff"
-      ),
-      style_code = ifelse(is.na(cellid),"",
-        paste0(' style="background: ', bg_color,'"')
-      )
-    )
-
-
     cellid2runid = rep(0,max(cell_df$cellid))
     rows = is.true(cell_df$cellid>0)
     cellid2runid[cell_df$cellid[rows]] = cell_df$runid[rows] %>% na.val(0)
@@ -169,7 +112,82 @@ html_art_tabs = function(project_dir, parcels=NULL, opts = repbox_html_opts(add_
   return(html)
 }
 
+html_make_cell_df = function(project_dir, parcels, opts) {
+  restore.point("html_make_cell_df")
+  parcels = repdb_load_parcels(project_dir, "art_tab_cell", parcels)
+  cell_df = parcels$art_tab_cell$art_tab_cell
+  if (opts$add_mapping) {
+    parcels = repdb_load_parcels(project_dir, c("map_cell", if (opts$add_tab_report) c("stata_cmd_tab_fig_ref","stata_run_cmd")), parcels)
+  }
 
+  map_df = parcels$map_cell$map_cell
+  add_mapping = opts$add_mapping & !is.null(map_df)
+
+  if (!add_mapping) {
+    cell_df$cellid = NA_integer_
+    cell_df$id_code = cell_df$style_code = cell_df$class_code = cell_df$debug_title = ""
+    return(list(cell_df=cell_df, parcels=parcels))
+  }
+
+
+  cell_df = cell_df %>% left_join(select(map_df, cellid, block, regid, num_type,match_type, runid, variant, block, cmd), by=c("cellid"))
+
+
+  cell_df = cell_df %>% mutate(
+    id_code = ifelse(is.true(cellid > 0), paste0(' id="cell_', cellid,'"'),""),
+    class_code = ifelse(is.true(match_type > 0),' class="tabnum"',""),
+    debug_txt = ifelse(cellid==0, "",paste0("cellid: ", cellid,"\nrunid: ", runid, "\nregid: ", regid, "\nvariant: ", variant,"\nblock: ", block)),
+    debug_title = ifelse(debug_txt == "","",paste0(' title="', debug_txt,'"') )
+  )
+
+  no_match_color = "#dddddd"
+  reg_best_color = hsl_to_rgb(0, 0.7, 0.8)
+  reg_best_approx_color = paste0("linear-gradient(45deg, ", reg_best_color,",",no_match_color,");")
+  reg_color = hsl_to_rgb(0, 0.3, 0.8)
+  reg_approx_color = reg_color
+  reg_approx_color = paste0("linear-gradient(45deg, ", reg_color,",",no_match_color,");")
+
+  cell_df = compute_cell_df_noreg_hue(cell_df)
+
+  cell_df$noreg_color = "#dddddd"
+  rows = !is.na(cell_df$noreg_hue)
+  cell_df$noreg_color[rows] = hsl_to_rgb(cell_df$noreg_hue[rows], 0.6, 0.8)
+
+  cell_df = cell_df %>% mutate(
+    bg_color = case_when(
+      is.na(cellid) ~ "",
+      match_type == 1 ~ reg_best_color,
+      match_type == 2 ~ reg_best_approx_color,
+      match_type == 3 ~ reg_color,
+      match_type == 4 ~ reg_approx_color,
+      match_type == 5 ~ noreg_color,
+      match_type == 6 ~ paste0("linear-gradient(45deg, ", noreg_color,",",no_match_color,");"),
+      match_type == 7 ~ noreg_color,
+      regid > 0 ~ no_match_color,
+      match_type == 0 ~ no_match_color,
+      TRUE ~ "#ffffff"
+    ),
+    style_code = ifelse(is.na(cellid),"",
+                        paste0(' style="background: ', bg_color,'"')
+    )
+  )
+
+  map_just_cell_df = opts$map_just_cell_df
+  if (!is.null(map_just_cell_df)) {
+    map_just_cell_df$show_map = rep(TRUE, NROW(map_just_cell_df))
+    cell_df = cell_df %>%
+      left_join(map_just_cell_df %>% select(cellid, tabid, show_map), by=c("cellid","tabid")) %>%
+      mutate(
+        style_code = ifelse(is.true(show_map),style_code,
+                          paste0(' style="background: #eeeeee"')
+      )
+    )
+  }
+
+  list(cell_df=cell_df, parcels=parcels)
+
+
+}
 
 html_cell_tab = function(tab, cells, opts) {
   restore.point("html_cell_tab")
