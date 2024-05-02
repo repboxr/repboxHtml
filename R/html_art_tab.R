@@ -167,8 +167,11 @@ html_make_cell_df = function(project_dir, parcels, opts) {
       match_type == 0 ~ no_match_color,
       TRUE ~ "#ffffff"
     ),
-    style_code = ifelse(is.na(cellid),"",
-                        paste0(' style="background: ', bg_color,'"')
+    style_code = case_when(
+      opts$hi_sel_colors & (is.na(cellid) | is.true(cellid==0))  ~ ' style = "background: #eeeeee"',
+      opts$hi_sel_colors ~ "",
+      is.na(cellid) ~ "",
+      TRUE ~ paste0(' style="background: ', bg_color,'"')
     )
   )
 
@@ -178,10 +181,13 @@ html_make_cell_df = function(project_dir, parcels, opts) {
     cell_df = cell_df %>%
       left_join(map_just_cell_df %>% select(cellid, tabid, show_map), by=c("cellid","tabid")) %>%
       mutate(
-        style_code = ifelse(is.true(show_map),style_code,
-                          paste0(' style="background: #eeeeee"')
+        style_code = case_when(
+          opts$hi_sel_colors ~ style_code,
+          !is.true(show_map) ~ ' style = "background: #eeeeee"',
+          is.true(show_map) ~ style_code
+        )
       )
-    )
+
   }
 
   list(cell_df=cell_df, parcels=parcels)
