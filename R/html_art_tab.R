@@ -132,12 +132,29 @@ html_make_cell_df = function(project_dir, parcels, opts) {
 
   cell_df = cell_df %>% left_join(select(map_df, cellid, block, regid, num_type,match_type, runid, variant, block, cmd), by=c("cellid"))
 
+  if (NROW(opts$cell_class_df)>0) {
+    cell_df = left_join_overwrite(cell_df, opts$cell_class_df %>% select(cellid,extra_classes=cell_classes), by=c("cellid")) %>%
+      mutate(
+        extra_classes = na.val(extra_classes,"")
+      )
+  } else {
+    cell_df$extra_classes = rep("", NROW(cell_df))
+  }
+  cell_df = cell_df %>% mutate(
+    class_code = case_when(
+      !is.true(cellid>0) ~ "",
+      is.true(match_type>0) ~ paste0('class = "has_cellid tabnum ', extra_classes,'"'),
+      TRUE ~  paste0('class = "has_cellid ', extra_classes,'"')
+    )
+  )
+
 
   cell_df = cell_df %>% mutate(
     id_code = ifelse(is.true(cellid > 0), paste0(' id="cell_', cellid,'"'),""),
-    class_code = ifelse(is.true(match_type > 0),' class="tabnum"',""),
-    debug_txt = ifelse(cellid==0, "",paste0("cellid: ", cellid,"\nrunid: ", runid, "\nregid: ", regid, "\nvariant: ", variant,"\nblock: ", block)),
-    debug_title = ifelse(debug_txt == "","",paste0(' title="', debug_txt,'"') )
+    debug_txt = ifelse(cellid==0, "",
+      paste0("cellid: ", cellid,"\nrunid: ", runid, "\nregid: ", regid, "\nvariant: ", variant,"\nblock: ", block, ifelse(extra_classes=="","",paste0("\ncell types: ", gsub("hi_","",extra_classes, fixed=FALSE))))
+      ),
+    debug_title = ifelse(debug_txt == "","",paste0(' title="', debug_txt,'"'))
   )
 
   no_match_color = "#dddddd"
@@ -202,7 +219,7 @@ html_cell_tab = function(tab, cells, opts) {
     group_by(tabid,row) %>%
     summarize(html = paste0(
 '<td ', id_code, class_code, style_code,
-ifelse(colspan > 1,paste0(' colspan="',colspan,'"'),""),
+ifelse(is.true(colspan > 1),paste0(' colspan="',colspan,'"'),""),
 if (opts$add_debug_info) debug_title,
 ">", text, "</td>", collapse="")
     )
