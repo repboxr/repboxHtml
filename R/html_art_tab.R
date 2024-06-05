@@ -321,6 +321,7 @@ html_tab_report = function(tab, cell_df, parcels) {
     paste0(round(100* (x / num_cells),1),"%")
   }
   li_fun = function(num, str) {
+    if (is.na(num)) paste0("<li> NA ", str,"</li>")
     if (num == 0) return("")
     paste0("<li>",num," ", str,"</li>")
   }
