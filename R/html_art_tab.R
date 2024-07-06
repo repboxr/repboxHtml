@@ -130,7 +130,16 @@ html_make_cell_df = function(project_dir, parcels, opts) {
   }
 
 
-  cell_df = cell_df %>% left_join(select(map_df, cellid, block, regid, num_type,match_type, runid, variant, block, cmd), by=c("cellid"))
+  cell_df = cell_df %>%
+    left_join(select(map_df, cellid, block, regid, num_type,match_type, runid, variant, block, cmd), by=c("cellid"))
+
+  # Problem there might still be multiple rows in map_df
+  # per cell df. Just take the first mapping
+  # To do: Explore in more detail
+  cell_df = cell_df %>%
+    group_by(cellid) %>%
+    filter(cellid == 0 | seq_len(n())==1) %>%
+    ungroup()
 
   if (NROW(opts$cell_class_df)>0) {
     cell_df = left_join_overwrite(cell_df, opts$cell_class_df %>% select(cellid,extra_classes=cell_classes), by=c("cellid")) %>%
