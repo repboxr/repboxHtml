@@ -34,10 +34,14 @@ html_all_do = function(project_dir, parcels=list(), opts = repbox_html_opts(), r
   }
 
   if (NROW(script_df)==0) {
-    return("<p>The supplement has no do files</p>")
+    return("<p>The supplement has no do files.</p>")
   }
 
   run_df = load_full_run_df(project_dir, parcels)
+  if (is.null(run_df)) {
+    return("<p>No do files from the supplement were run.</p>")
+  }
+
   cmd_df = load_full_cmd_df(project_dir, parcels)
 
   if (!is.null(just_runids)) {

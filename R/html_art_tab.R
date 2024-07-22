@@ -17,7 +17,10 @@ html_art_tabs = function(project_dir, parcels=NULL, opts = repbox_html_opts(add_
   tab_df = parcels$art_tab$art_tab
   if (is.null(tab_df)) {
     parcels = repdb_load_parcels(project_dir,"art")
-    art = parcels$art$art[1,]
+    art = parcels$art$art
+    if (is.data.frame(art)) {
+      art = art[1,]
+    }
     return(paste0('<h5>No tables detected in the article "', art$title,'" <a href="', art$pdf_url,'" target="_blank">🡥</a></h5>'))
   }
   cell_df = parcels$art_tab_cell$art_tab_cell
@@ -267,7 +270,9 @@ html_tab_report = function(tab, cell_df, parcels) {
   #start_small_regid = first(art_small_reg$regid)
 
   #is_small_reg = any(is.true(c_df$regid >= start_small_regid))
-  run_df = parcels$stata_run_cmd$stata_run_cmd
+  run_df = parcels$stata_run_cmd$stata_run_cmd %>%
+    repboxDB::repdb_null_to_empty("stata_run_cmd")
+
 
   # Determine which cell maps are to a runid whose code line has a reference
   # (by a comment above or file name) to the current table
