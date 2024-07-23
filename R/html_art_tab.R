@@ -242,7 +242,7 @@ if (opts$add_debug_info) debug_title,
     pull(html)
 
   org_link = ""
-  if (opts$add_org_tab_link & tab$url_org_tab != "") {
+  if (opts$add_org_tab_link & is.true(tab$url_org_tab != "")) {
     org_link = paste0(' <a href="', tab$url_org_tab,'" target="_blank">🡥</a>')
   }
 
