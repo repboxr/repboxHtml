@@ -113,33 +113,43 @@ do_code_html = function(project_dir, script_num, file_path, do_txt, log_info_htm
 
   ldf = left_join(ldf, select(cmd_df, orgline, line, is_reg, cmd), by=c("orgline"))
 
+  # For delimit ; the orglines often don't match
+  # the actual command line but a comment or empty line further above
+  # Try to repair it heuristically
+  ldf = correct_delimit_semi_orglines(ldf)
 
   # Aggregate run error info on orgline level
   #re = run_df[run_df$script_num==script_num,]
   re = run_df
 
   rel = re %>%
-    group_by(orgline) %>%
+    group_by(line) %>%
     summarize(
       cmdline = first(cmdline),
       runerr = any(is.true(errcode != 0)),
       errmsg = trimws(paste0(unique(trimws(errmsg)), collapse=" ")),
       missing_data = any(is.true(missing_data))
     ) %>%
-    arrange(orgline) %>%
+    arrange(line) %>%
     mutate(
       firsterr = is.true(runerr & (seq_len(n())==1 | !lag(runerr)))
     )
 
-  ldf = left_join(ldf, rel, by="orgline")
+  ldf = left_join(ldf, rel, by="line")
+
+
+
 
   # Set commands that were not run to error
   # This is usually the case due to an earlier error
   # in a loop
+  ldf$actual_orgline = ldf$orgline
+  ldf$orgline = ldf$first_orgline
+
   ldf$is.cmd = !ldf$cmd %in% c("}","end","program","if","else")
   ldf$not.run = ldf$is.cmd & is.na(ldf$runerr)
 
-  rows = match(log_info_html$orgline, ldf$orgline)
+  rows = match(log_info_html$line, ldf$line)
   ldf$infobtn[rows] = log_info_html$log.info.btn
   ldf$infobox[rows] = log_info_html$log.info.div
 
@@ -251,10 +261,10 @@ do_code_html = function(project_dir, script_num, file_path, do_txt, log_info_htm
 
   ldf = ldf %>% mutate(
     html.txt = paste0(
-      '<tr><td id="B',orgline,'___',script_num,'">',infobtn,'</td><td class="code-line-td">',orgline,'</td><td><pre class = "do-pre">',comment,
+      '<tr><td id="B',actual_orgline,'___',script_num,'">',infobtn,'</td><td class="code-line-td">',orgline,'</td><td><pre class = "do-pre">',comment,
       link_html,
       #'<code id="cb_',orgline,'_',script_num,'" class="colorbar"></code>',
-      '<code id="L',orgline,'___',script_num,'" class="',class,'"', debug_title, '>',txt,'</code></pre>',
+      '<code id="L',actual_orgline,'___',script_num,'" class="',class,'"', debug_title, '>',txt,'</code></pre>',
       infobox,'</td></tr>')
     )
   inner = paste0(ldf$html.txt, collapse="\n")
@@ -331,7 +341,7 @@ log_info_html = function(run_df, project_dir,opts) {
         logtxt,'</code></pre>'
       )
     ) %>%
-    group_by(script_num, orgline) %>%
+    group_by(script_num, orgline, line) %>%
     summarize(
       is_reg = first(is_reg),
       runs = n(),
@@ -349,4 +359,29 @@ log_info_html = function(run_df, project_dir,opts) {
 
   log_info_html
 
+}
+
+
+correct_delimit_semi_orglines = function(ldf) {
+  restore.point("correct_delimit_semi_orglines")
+  x = ldf$cmd
+  not_na <- !is.na(x)
+  ldf$cmd_group <- cumsum(not_na)
+  ldf2 = ldf %>%
+    group_by(cmd_group) %>%
+    mutate(
+      #cmd = first(cmd),
+      #line = first(line),
+      #is_reg = first(is_reg),
+      first_orgline = min(orgline),
+      cmd_points = has.substr(txt, first(cmd)) + startsWith(trimws(txt),first(cmd)) + (1:n()) / 1e6,
+      is_org_line = cmd_points == max(cmd_points)
+    ) %>%
+    mutate(
+      cmd = ifelse(is_org_line, first(cmd), NA_character_),
+      line = ifelse(is_org_line, first(line), NA_integer_),
+      is_reg = ifelse(is_org_line, first(is_reg), NA)
+    ) %>%
+    ungroup()
+  ldf2
 }
