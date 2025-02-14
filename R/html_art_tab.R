@@ -62,9 +62,9 @@ html_art_tabs = function(project_dir, parcels=NULL, opts = repbox_html_opts(add_
       tab = tab_df[tab_df$tabid == tabid, ]
       cells = cell_df[cell_df$tabid == tabid, ]
 
-      source_html = if (tab$pdf_file != "" & opts$add_art_source_tab)  html_source_tab(tab)
-      report_html = if (opts$add_tab_report & add_mapping)  html_tab_report(tab, cells, parcels)
-      ind_html = if (opts$add_tab_indicators) html_tab_indicators(tab, parcels)
+      source_html = if (isTRUE(tab$pdf_file != "" & opts$add_art_source_tab))  html_source_tab(tab)
+      report_html = if (isTRUE(opts$add_tab_report & add_mapping))  html_tab_report(tab, cells, parcels)
+      ind_html = if (isTRUE(opts$add_tab_indicators)) html_tab_indicators(tab, parcels)
       tab_html = html_cell_tab(tab,cells, opts)
 
       list(
@@ -242,7 +242,7 @@ if (opts$add_debug_info) debug_title,
     pull(html)
 
   org_link = ""
-  if (opts$add_org_tab_link & is.true(tab$url_org_tab != "")) {
+  if (isTRUE(opts$add_org_tab_link & is.true(tab$url_org_tab != ""))) {
     org_link = paste0(' <a href="', tab$url_org_tab,'" target="_blank">🡥</a>')
   }
 
@@ -281,7 +281,7 @@ html_tab_report = function(tab, cell_df, parcels) {
   .tabid = tab$tabid
   cmd_ref = parcels$stata_cmd_tab_fig_ref$stata_cmd_tab_fig_ref %>%
     repdb_null_to_empty("stata_cmd_tab_fig_ref") %>%
-    mutate(is_cur_tab = ref_type=="tab" & ref_id==.tabid)
+    mutate(is_cur_tab = is.true(ref_type=="tab" & ref_id==.tabid))
 
   cur_ref = filter(cmd_ref,is_cur_tab) %>%
     mutate(has_cur_ref = TRUE)
