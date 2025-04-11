@@ -7,7 +7,7 @@ div .nav>li>a{
   padding: 2px 5px;
 }
 
-#do-col-div .tab-content {
+#script-col-div .tab-content, #do-col-div .tab-content {
   border-top: 1px solid #eee;
 }
 
@@ -106,7 +106,7 @@ div .nav>li>a{
   border: none;
 }
 
-.do-pre .reg-prob {
+.script-pre .reg-prob, .do-pre .reg-prob {
   color: #770022;
 }
 
@@ -124,7 +124,7 @@ div .nav>li>a{
   border: none;
 }
 
-.do-pre, .code-pre {
+.script-pre, .do-pre, .code-pre {
   background: #ffffff;
   padding: 0;
   padding-top: 1px;
